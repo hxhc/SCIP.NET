@@ -22,34 +22,59 @@ SCIP.NET is a modern C# wrapper for the SCIP optimization solver, providing a ty
 ## Quick Start
 
 ```csharp
+using System;
 using ScipNet;
+using ScipNet.Core;
 
 // Create model
 using var model = new Model("example");
 
-// Create variables
-var x = model.AddVariable("x", 0, 10, 1, VariableType.Integer);
-var y = model.AddVariable("y", 0, 10, 2, VariableType.Integer);
+// Create variables (objective coefficients will be set in SetObjective)
+var x = model.AddVariable("x", 0, 10, 0, VariableType.Integer);
+var y = model.AddVariable("y", 0, 10, 0, VariableType.Integer);
 
-// Set objective function (maximize)
-model.SetObjectiveSense(ObjectiveSense.Maximize);
+Console.WriteLine($"Created variables: {x}, {y}");
 
-// Add constraints (natural syntax)
+// Set objective function: maximize x + 2*y
+model.SetObjective(x + 2 * y, ObjectiveSense.Maximize);
+
+// Add constraints (using natural syntax)
 model.AddConstraint((x + y).Leq(5));
 model.AddConstraint((2 * x + y).Geq(3));
 model.AddConstraint((x - y).Eq(1));
 
+Console.WriteLine($"Added constraints: {model.Constraints.Count}");
+
 // Optimize
+Console.WriteLine("Solving...");
 var status = model.Optimize();
+
+Console.WriteLine($"Solve status: {status}");
 
 // Get solution
 if (status == SolveStatus.Optimal)
 {
     var solution = model.GetBestSolution();
-    Console.WriteLine($"Optimal value: {solution.ObjectiveValue}");
-    Console.WriteLine($"x = {solution.GetValue(x)}");
-    Console.WriteLine($"y = {solution.GetValue(y)}");
+    if (solution != null)
+    {
+        Console.WriteLine($"Optimal value: {solution.ObjectiveValue:F4}");
+        Console.WriteLine($"x = {solution.GetValue(x):F4}");
+        Console.WriteLine($"y = {solution.GetValue(y):F4}");
+    }
 }
+
+// Get statistics
+var statistics = model.GetStatistics();
+Console.WriteLine();
+Console.WriteLine("Statistics:");
+Console.WriteLine($"  Solving time: {statistics.SolvingTime:F2}s");
+Console.WriteLine($"  Total nodes: {statistics.TotalNodes}");
+Console.WriteLine($"  Open nodes: {statistics.OpenNodes}");
+Console.WriteLine($"  Primal bound: {statistics.PrimalBound:F4}");
+Console.WriteLine($"  Dual bound: {statistics.DualBound:F4}");
+Console.WriteLine($"  Gap: {statistics.Gap:P2}");
+Console.WriteLine($"  LP iterations: {statistics.NLpIterations}");
+Console.WriteLine($"  Solutions found: {statistics.NSolutionsFound}");
 ```
 
 ## Project Structure
