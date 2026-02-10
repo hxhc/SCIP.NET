@@ -1,6 +1,8 @@
 # SCIP.NET
-
 SCIP.NET - A modern C# wrapper for the SCIP (Solving Constraint Integer Programs) optimization solver.
+
+## Important
+This project written by AI coding tool. The first commit was purely by [GLM 4.7](https://bigmodel.cn/) (aka. [Z.ai](https://chat.z.ai/)). I do not guarantee the correctness of the code.
 
 [中文文档](README.zh-CN.md)
 

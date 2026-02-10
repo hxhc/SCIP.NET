@@ -2,6 +2,9 @@
 
 SCIP.NET - 一个现代的 C# 封装，用于 SCIP（求解约束整数规划）优化求解器。
 
+## 重要
+本项目由 AI 代码工具编写。首个commit纯粹由 [GLM 4.7](https://bigmodel.cn/) (又称 [Z.ai](https://chat.z.ai/)) 完成的。我不保证代码的正确性。
+
 [English Documentation](README.md)
 
 ## 概述
