@@ -13,7 +13,6 @@ public sealed class Variable
     private readonly IntPtr _varPtr;
     private double _lb;
     private double _ub;
-    private double _obj;
 
     /// <summary>
     /// 获取变量名称
@@ -35,19 +34,13 @@ public sealed class Variable
     /// </summary>
     public double UpperBound => _ub;
 
-    /// <summary>
-    /// 获取目标函数系数
-    /// </summary>
-    public double Objective => _obj;
-
     internal Variable(
         Model model,
         string name,
         IntPtr varPtr,
         VariableType type,
         double lowerBound,
-        double upperBound,
-        double objective)
+        double upperBound)
     {
         _model = model;
         _name = name;
@@ -55,7 +48,6 @@ public sealed class Variable
         _type = type;
         _lb = lowerBound;
         _ub = upperBound;
-        _obj = objective;
     }
 
     internal IntPtr VarPtr => _varPtr;
@@ -114,6 +106,6 @@ public sealed class Variable
 
     public override string ToString()
     {
-        return $"{_name} [{_type}, {_lb}, {_ub}, obj={_obj}]";
+        return $"{_name} [{_type}, {_lb}, {_ub}]";
     }
 }

@@ -64,7 +64,6 @@ public sealed class Model : IDisposable
         string name,
         double lowerBound,
         double upperBound,
-        double objective,
         VariableType type)
     {
         ReturnCode ret = ScipNativeMethods.SCIPcreateVarBasic(
@@ -73,14 +72,14 @@ public sealed class Model : IDisposable
             name,
             lowerBound,
             upperBound,
-            objective,
+            0.0,
             type);
         ErrorHandler.CheckReturnCode(ret, $"Failed to create variable {name}");
 
         ret = ScipNativeMethods.SCIPaddVar(_scipHandle, varPtr);
         ErrorHandler.CheckReturnCode(ret, $"Failed to add variable {name}");
 
-        var variable = new Variable(this, name, varPtr, type, lowerBound, upperBound, objective);
+        var variable = new Variable(this, name, varPtr, type, lowerBound, upperBound);
         _variables[name] = variable;
         return variable;
     }

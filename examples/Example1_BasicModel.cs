@@ -18,9 +18,9 @@ public class Example1_BasicModel
         // 创建模型
         using var model = new Model("example");
 
-        // 创建变量（目标函数系数将在SetObjective中设置）
-        var x = model.AddVariable("x", 0, 10, 0, VariableType.Integer);
-        var y = model.AddVariable("y", 0, 10, 0, VariableType.Integer);
+        // 创建变量
+        var x = model.AddVariable("x", 0, 10, VariableType.Integer);
+        var y = model.AddVariable("y", 0, 10, VariableType.Integer);
 
         Console.WriteLine($"Created variables: {x}, {y}");
 

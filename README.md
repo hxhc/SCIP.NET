@@ -29,9 +29,9 @@ using ScipNet.Core;
 // Create model
 using var model = new Model("example");
 
-// Create variables (objective coefficients will be set in SetObjective)
-var x = model.AddVariable("x", 0, 10, 0, VariableType.Integer);
-var y = model.AddVariable("y", 0, 10, 0, VariableType.Integer);
+// Create variables
+var x = model.AddVariable("x", 0, 10, VariableType.Integer);
+var y = model.AddVariable("y", 0, 10, VariableType.Integer);
 
 Console.WriteLine($"Created variables: {x}, {y}");
 
