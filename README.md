@@ -2,43 +2,45 @@
 
 SCIP.NET - A modern C# wrapper for the SCIP (Solving Constraint Integer Programs) optimization solver.
 
-## 概述
+[中文文档](README.zh-CN.md)
 
-SCIP.NET 是 SCIP 优化求解器的现代 C# 封装，提供类型安全、易于使用的 API，支持自然数学表达式语法。
+## Overview
 
-## 特性
+SCIP.NET is a modern C# wrapper for the SCIP optimization solver, providing a type-safe, easy-to-use API with natural mathematical expression syntax.
 
-- **类型安全**：充分利用 C# 的强类型系统
-- **自然语法**：支持运算符重载和表达式语法
-- **资源管理**：使用 SafeHandle 确保 RAII
-- **跨平台**：支持 .NET 8.0+，可在 Windows、Linux、macOS 上运行
-- **错误处理**：使用 C# 异常机制
-- **高性能**：基于 P/Invoke 的原生接口调用
+## Features
 
-## 快速开始
+- **Type Safety**: Leverages C#'s strong type system
+- **Natural Syntax**: Supports operator overloading and expression syntax
+- **Resource Management**: Uses SafeHandle for RAII
+- **Cross-Platform**: Supports .NET 8.0+, runs on Windows, Linux, and macOS
+- **Error Handling**: Uses C# exception mechanism
+- **High Performance**: Native interface calls via P/Invoke
+
+## Quick Start
 
 ```csharp
 using ScipNet;
 
-// 创建模型
+// Create model
 using var model = new Model("example");
 
-// 创建变量
+// Create variables
 var x = model.AddVariable("x", 0, 10, 1, VariableType.Integer);
 var y = model.AddVariable("y", 0, 10, 2, VariableType.Integer);
 
-// 设置目标函数（最大化）
+// Set objective function (maximize)
 model.SetObjectiveSense(ObjectiveSense.Maximize);
 
-// 添加约束（自然语法）
+// Add constraints (natural syntax)
 model.AddConstraint((x + y).Leq(5));
 model.AddConstraint((2 * x + y).Geq(3));
 model.AddConstraint((x - y).Eq(1));
 
-// 优化
+// Optimize
 var status = model.Optimize();
 
-// 获取解
+// Get solution
 if (status == SolveStatus.Optimal)
 {
     var solution = model.GetBestSolution();
@@ -48,94 +50,94 @@ if (status == SolveStatus.Optimal)
 }
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 SCIP.NET/
 ├── src/
 │   └── ScipNet/
-│       ├── ScipNet.csproj       # 项目文件
-│       ├── ScipNet.cs            # 主入口
-│       ├── Core/                # 核心类
-│       │   ├── Enums.cs         # 枚举类型
-│       │   ├── Model.cs         # 模型类
-│       │   ├── Variable.cs      # 变量类
-│       │   ├── LinearExpression.cs # 线性表达式
-│       │   ├── Constraint.cs     # 约束类
-│       │   ├── Solution.cs      # 解类
-│       │   └── Statistics.cs    # 统计类
-│       └── Native/              # 原生接口
-│           ├── ScipHandle.cs    # SafeHandle 包装
-│           ├── ScipNativeMethods.cs # P/Invoke 声明
-│           └── ErrorHandler.cs  # 错误处理
+│       ├── ScipNet.csproj       # Project file
+│       ├── ScipNet.cs            # Main entry
+│       ├── Core/                # Core classes
+│       │   ├── Enums.cs         # Enum types
+│       │   ├── Model.cs         # Model class
+│       │   ├── Variable.cs      # Variable class
+│       │   ├── LinearExpression.cs # Linear expression
+│       │   ├── Constraint.cs     # Constraint class
+│       │   ├── Solution.cs      # Solution class
+│       │   └── Statistics.cs    # Statistics class
+│       └── Native/              # Native interface
+│           ├── ScipHandle.cs    # SafeHandle wrapper
+│           ├── ScipNativeMethods.cs # P/Invoke declarations
+│           └── ErrorHandler.cs  # Error handling
 ├── examples/
-│   ├── Examples.csproj       # 示例项目
-│   └── Example1_BasicModel.cs # 基础示例
+│   ├── Examples.csproj       # Example project
+│   └── Example1_BasicModel.cs # Basic example
 ├── plans/
-│   ├── architecture-design.md   # 架构设计文档
-│   └── native-dll-interop-analysis.md # Native DLL 互操作分析
+│   ├── architecture-design.md   # Architecture design
+│   └── native-dll-interop-analysis.md # Native DLL interop analysis
 └── README.md
 ```
 
-## 核心类
+## Core Classes
 
 ### Model
-代表优化问题模型，提供变量和约束管理、求解等功能。
+Represents an optimization problem model, providing variable and constraint management, solving, etc.
 
 ### Variable
-代表决策变量，支持 Binary、Integer、Continuous 类型。
+Represents a decision variable, supporting Binary, Integer, and Continuous types.
 
 ### LinearExpression
-代表线性表达式，支持运算符重载。
+Represents a linear expression, supporting operator overloading.
 
 ### Constraint
-约束基类，包括 LinearConstraint 和 RangeConstraint。
+Constraint base class, including LinearConstraint and RangeConstraint.
 
 ### Solution
-代表 SCIP 解，提供变量值访问。
+Represents a SCIP solution, providing variable value access.
 
 ### Statistics
-代表求解统计信息，包括求解时间、节点数等。
+Represents solving statistics, including solving time, node count, etc.
 
-## 枚举类型
+## Enum Types
 
-- **VariableType**：Binary、Integer、Continuous
-- **ObjectiveSense**：Maximize、Minimize
-- **SolveStatus**：Optimal、Infeasible、Unbounded 等
-- **ReturnCode**：Okay、Error、NoMemory 等
-- **ResultCode**：DidNotRun、Feasible、Infeasible 等
+- **VariableType**: Binary, Integer, Continuous
+- **ObjectiveSense**: Maximize, Minimize
+- **SolveStatus**: Optimal, Infeasible, Unbounded, etc.
+- **ReturnCode**: Okay, Error, NoMemory, etc.
+- **ResultCode**: DidNotRun, Feasible, Infeasible, etc.
 
-## 构建和运行
+## Build and Run
 
-### 构建库
+### Build Library
 
 ```bash
 cd src/ScipNet
 dotnet build
 ```
 
-### 运行示例
+### Run Example
 
 ```bash
 cd examples
 dotnet run
 ```
 
-## 依赖项
+## Dependencies
 
 - .NET 8.0+
-- SCIP C 库（需要单独安装）
+- SCIP C library (requires separate installation)
 
-## 许可证
+## License
 
 Apache License 2.0
 
-## 参考
+## References
 
-- [SCIP 官方文档](https://scipopt.org/doc/html/)
-- [SCIPpp 源代码](https://github.com/scipopt/scippp)
-- [PySCIPOpt 源代码](https://github.com/scipopt/PySCIPOpt)
+- [SCIP Official Documentation](https://scipopt.org/doc/html/)
+- [SCIPpp Source Code](https://github.com/scipopt/scippp)
+- [PySCIPOpt Source Code](https://github.com/scipopt/PySCIPOpt)
 
-## 贡献
+## Contributing
 
-欢迎贡献！请提交 Pull Request 或创建 Issue。
+Contributions are welcome! Please submit Pull Requests or create Issues.
