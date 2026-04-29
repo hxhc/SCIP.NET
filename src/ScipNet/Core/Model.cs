@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using ScipNet.Native;
 
 namespace ScipNet.Core;
@@ -108,7 +109,7 @@ public sealed class Model : IDisposable
     }
 
     /// <summary>
-    /// 设置目标函数
+    /// 设置目标函数（线性）
     /// </summary>
     /// <param name="expression">目标函数表达式</param>
     /// <param name="sense">目标函数方向</param>
@@ -122,6 +123,75 @@ public sealed class Model : IDisposable
         {
             ReturnCode ret = ScipNativeMethods.SCIPchgVarObj(_scipHandle, kvp.Key.VarPtr, kvp.Value);
             ErrorHandler.CheckReturnCode(ret, $"Failed to set objective coefficient for variable {kvp.Key.Name}");
+        }
+    }
+
+    /// <summary>
+    /// 设置目标函数（非线性，通过 epigraph reformulation 自动转换）
+    /// </summary>
+    /// <param name="expression">非线性目标函数表达式</param>
+    /// <param name="sense">目标函数方向</param>
+    public void SetObjective(NonlinearExpression expression, ObjectiveSense sense)
+    {
+        // 设置目标函数方向
+        SetObjectiveSense(sense);
+
+        // 创建辅助连续变量 objvar（目标系数为 1.0），注册到 _variables 以确保 Dispose 时释放
+        ReturnCode ret = ScipNativeMethods.SCIPcreateVarBasic(
+            _scipHandle,
+            out IntPtr objVarPtr,
+            "__objvar__",
+            double.NegativeInfinity,
+            double.PositiveInfinity,
+            1.0,
+            VariableType.Continuous);
+        ErrorHandler.CheckReturnCode(ret, "Failed to create objective variable");
+
+        ret = ScipNativeMethods.SCIPaddVar(_scipHandle, objVarPtr);
+        ErrorHandler.CheckReturnCode(ret, "Failed to add objective variable");
+
+        var objVar = new Variable(this, "__objvar__", objVarPtr, VariableType.Continuous,
+            double.NegativeInfinity, double.PositiveInfinity);
+        _variables[objVar.Name] = objVar;
+
+        // 构建原生表达式树
+        IntPtr exprPtr = expression.BuildExpr(_scipHandle);
+        try
+        {
+            // epigraph reformulation:
+            //   minimize f(x)  →  constraint: f(x) - objvar <= 0,  即 f(x) <= objvar
+            //   maximize f(x)  →  constraint: f(x) - objvar >= 0,  即 f(x) >= objvar
+            double lhs = sense == ObjectiveSense.Minimize ? double.NegativeInfinity : 0.0;
+            double rhs = sense == ObjectiveSense.Minimize ? 0.0 : double.PositiveInfinity;
+
+            ret = ScipNativeMethods.SCIPcreateConsBasicNonlinear(
+                _scipHandle,
+                out IntPtr consPtr,
+                "__objcons__",
+                exprPtr,
+                lhs,
+                rhs);
+            ErrorHandler.CheckReturnCode(ret, "Failed to create objective constraint");
+
+            // 将 objvar 的系数 -1.0 添加到约束的线性部分
+            // 约束实际表达: f(x) - 1.0*objvar <= 0 (min) 或 >= 0 (max)
+            ret = ScipNativeMethods.SCIPaddLinearVarNonlinear(_scipHandle, consPtr, objVarPtr, -1.0);
+            ErrorHandler.CheckReturnCode(ret, "Failed to add linear var to objective constraint");
+
+            // 添加约束
+            ret = ScipNativeMethods.SCIPaddCons(_scipHandle, consPtr);
+            ErrorHandler.CheckReturnCode(ret, "Failed to add objective constraint");
+
+            // 记录约束（由 Model 管理释放）
+            var objCons = new NonlinearConstraint(expression, lhs, rhs, "__objcons__");
+            objCons.Model = this;
+            objCons.SetConsPtrInternal(consPtr);
+            _constraints[objCons.Name] = objCons;
+        }
+        finally
+        {
+            // 释放表达式（约束已捕获）
+            ScipNativeMethods.SCIPreleaseExpr(_scipHandle, ref exprPtr);
         }
     }
 
@@ -148,6 +218,48 @@ public sealed class Model : IDisposable
         }
 
         return new Solution(this, solPtr);
+    }
+
+    /// <summary>
+    /// 获取解池中的所有解
+    /// </summary>
+    public IReadOnlyList<Solution> GetSolutions()
+    {
+        int nsols = ScipNativeMethods.SCIPgetNSols(_scipHandle);
+        if (nsols == 0)
+        {
+            return Array.Empty<Solution>();
+        }
+
+        IntPtr solsPtr = ScipNativeMethods.SCIPgetSols(_scipHandle);
+        if (solsPtr == IntPtr.Zero)
+        {
+            return Array.Empty<Solution>();
+        }
+
+        var solutions = new Solution[nsols];
+        for (int i = 0; i < nsols; i++)
+        {
+            IntPtr solPtr = Marshal.ReadIntPtr(solsPtr, i * IntPtr.Size);
+            double objVal = ScipNativeMethods.SCIPgetSolOrigObj(_scipHandle, solPtr);
+            solutions[i] = new Solution(this, solPtr, objVal);
+        }
+
+        return solutions;
+    }
+
+    /// <summary>
+    /// 获取解池中的解数量
+    /// </summary>
+    public int SolutionCount => ScipNativeMethods.SCIPgetNSols(_scipHandle);
+
+    /// <summary>
+    /// 设置整数参数
+    /// </summary>
+    public void SetIntParam(string name, int value)
+    {
+        ReturnCode ret = ScipNativeMethods.SCIPsetIntParam(_scipHandle, name, value);
+        ErrorHandler.CheckReturnCode(ret, $"Failed to set int param '{name}'");
     }
 
     /// <summary>

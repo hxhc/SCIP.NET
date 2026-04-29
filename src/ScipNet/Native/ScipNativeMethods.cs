@@ -269,4 +269,149 @@ internal static class ScipNativeMethods
     public static extern int SCIPgetParamType(
         IntPtr scip,
         [MarshalAs(UnmanagedType.LPStr)] string name);
+
+    // ===== 非线性表达式创建 =====
+
+    /// <summary>
+    /// 创建变量表达式
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern ReturnCode SCIPcreateExprVar(
+        IntPtr scip,
+        out IntPtr expr,
+        IntPtr var,
+        IntPtr ownercreate,
+        IntPtr ownercreatedata);
+
+    /// <summary>
+    /// 创建常量值表达式
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern ReturnCode SCIPcreateExprValue(
+        IntPtr scip,
+        out IntPtr expr,
+        double value,
+        IntPtr ownercreate,
+        IntPtr ownercreatedata);
+
+    /// <summary>
+    /// 创建求和表达式
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern ReturnCode SCIPcreateExprSum(
+        IntPtr scip,
+        out IntPtr expr,
+        int nchildren,
+        IntPtr children,
+        IntPtr coefficients,
+        double constant,
+        IntPtr ownercreate,
+        IntPtr ownercreatedata);
+
+    /// <summary>
+    /// 创建乘积表达式
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern ReturnCode SCIPcreateExprProduct(
+        IntPtr scip,
+        out IntPtr expr,
+        int nchildren,
+        IntPtr children,
+        double coefficient,
+        IntPtr ownercreate,
+        IntPtr ownercreatedata);
+
+    /// <summary>
+    /// 创建幂运算表达式
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern ReturnCode SCIPcreateExprPow(
+        IntPtr scip,
+        out IntPtr expr,
+        IntPtr child,
+        double exponent,
+        IntPtr ownercreate,
+        IntPtr ownercreatedata);
+
+    /// <summary>
+    /// 创建指数表达式
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern ReturnCode SCIPcreateExprExp(
+        IntPtr scip,
+        out IntPtr expr,
+        IntPtr child,
+        IntPtr ownercreate,
+        IntPtr ownercreatedata);
+
+    /// <summary>
+    /// 创建对数表达式
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern ReturnCode SCIPcreateExprLog(
+        IntPtr scip,
+        out IntPtr expr,
+        IntPtr child,
+        IntPtr ownercreate,
+        IntPtr ownercreatedata);
+
+    /// <summary>
+    /// 创建绝对值表达式
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern ReturnCode SCIPcreateExprAbs(
+        IntPtr scip,
+        out IntPtr expr,
+        IntPtr child,
+        IntPtr ownercreate,
+        IntPtr ownercreatedata);
+
+    /// <summary>
+    /// 释放表达式
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern ReturnCode SCIPreleaseExpr(
+        IntPtr scip,
+        ref IntPtr expr);
+
+    // ===== 非线性约束 =====
+
+    /// <summary>
+    /// 创建基本非线性约束
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    public static extern ReturnCode SCIPcreateConsBasicNonlinear(
+        IntPtr scip,
+        out IntPtr cons,
+        [MarshalAs(UnmanagedType.LPStr)] string name,
+        IntPtr expr,
+        double lhs,
+        double rhs);
+
+    /// <summary>
+    /// 向非线性约束添加线性变量
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern ReturnCode SCIPaddLinearVarNonlinear(
+        IntPtr scip,
+        IntPtr cons,
+        IntPtr var,
+        double coef);
+
+    // ===== 解池 =====
+
+    /// <summary>
+    /// 获取所有解的数组
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr SCIPgetSols(
+        IntPtr scip);
+
+    /// <summary>
+    /// 获取特定解的原始目标值
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern double SCIPgetSolOrigObj(
+        IntPtr scip,
+        IntPtr sol);
 }

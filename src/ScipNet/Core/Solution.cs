@@ -15,11 +15,16 @@ public sealed class Solution
     /// </summary>
     public double ObjectiveValue { get; private set; }
 
-    internal Solution(Model model, IntPtr solPtr)
+    internal Solution(Model model, IntPtr solPtr, double objectiveValue)
     {
         _model = model;
         _solPtr = solPtr;
-        ObjectiveValue = ScipNativeMethods.SCIPgetPrimalbound(_model.ScipHandle);
+        ObjectiveValue = objectiveValue;
+    }
+
+    internal Solution(Model model, IntPtr solPtr)
+        : this(model, solPtr, ScipNativeMethods.SCIPgetPrimalbound(model.ScipHandle))
+    {
     }
 
     internal IntPtr SolPtr => _solPtr;

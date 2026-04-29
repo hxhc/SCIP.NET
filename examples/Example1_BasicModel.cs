@@ -8,7 +8,7 @@ using ScipNet.Core;
 /// </summary>
 public class Example1_BasicModel
 {
-    public static void Main()
+    public static void Main1()
     {
         Console.WriteLine("SCIP.NET Basic Model Example");
         // Console.WriteLine($"SCIP.NET Version: {ScipNet.Version}");

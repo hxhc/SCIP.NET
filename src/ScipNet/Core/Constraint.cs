@@ -42,6 +42,14 @@ public abstract class Constraint
         ConsPtr = consPtr;
     }
 
+    /// <summary>
+    /// 内部设置约束指针（用于由 Model 直接创建的约束）
+    /// </summary>
+    internal void SetConsPtrInternal(IntPtr consPtr)
+    {
+        SetConsPtr(consPtr);
+    }
+
     protected Constraint(string name)
     {
         _name = name;
