@@ -400,22 +400,65 @@ internal static class ScipNativeMethods
 
     // ===== 解池 =====
 
-    /// <summary>
-    /// 获取所有解的数组
-    /// </summary>
-    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    public static extern IntPtr SCIPgetSols(
-        IntPtr scip);
+/// <summary>
+/// 获取解池中的所有解
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern IntPtr SCIPgetSols(
+    IntPtr scip);
 
-    /// <summary>
-    /// 获取特定解的原始目标值
-    /// </summary>
-    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    public static extern double SCIPgetSolOrigObj(
-        IntPtr scip,
-        IntPtr sol);
+/// <summary>
+/// 获取特定解的原始目标值
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern double SCIPgetSolOrigObj(
+    IntPtr scip,
+    IntPtr sol);
 
-    // ===== Indicator 约束 =====
+// ===== 计数/枚举所有可行解 =====
+
+/// <summary>
+/// 设置计数参数（包括禁用 restarts 等安全设置）
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern ReturnCode SCIPsetParamsCountsols(
+    IntPtr scip);
+
+/// <summary>
+/// 计数/枚举所有可行解（而不是只求解最优解）
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern ReturnCode SCIPcount(
+    IntPtr scip);
+
+/// <summary>
+/// 获取计数的解数量
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern long SCIPgetNCountedSols(
+    IntPtr scip,
+    out IntPtr valid);
+
+/// <summary>
+/// 获取收集的稀疏解（这些解是相对于 active variables 的）
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern ReturnCode SCIPgetCountedSparseSols(
+    IntPtr scip,
+    out IntPtr vars,
+    out int nvars,
+    out IntPtr sols,
+    out int nsols);
+
+/// <summary>
+/// 释放计数的稀疏解
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern void SCIPfreeCountedSparseSols(
+    IntPtr scip,
+    ref IntPtr sols);
+
+// ===== Indicator 约束 =====
 
     /// <summary>
     /// 创建基本 Indicator 约束：binvar = 1 时，sum(vals[i]*vars[i]) &lt;= rhs 成立
@@ -469,4 +512,31 @@ public static extern ReturnCode SCIPgetStringParam(
     IntPtr scip,
     [MarshalAs(UnmanagedType.LPStr)] string name,
     out IntPtr value);
+
+/// <summary>
+/// 设置长整型参数
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+public static extern ReturnCode SCIPsetLongintParam(
+    IntPtr scip,
+    [MarshalAs(UnmanagedType.LPStr)] string name,
+    long value);
+
+/// <summary>
+/// 获取长整型参数值
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+public static extern ReturnCode SCIPgetLongintParam(
+    IntPtr scip,
+    [MarshalAs(UnmanagedType.LPStr)] string name,
+    out long value);
+
+/// <summary>
+/// 设置参数强调模式
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern ReturnCode SCIPsetEmphasis(
+    IntPtr scip,
+    ParamEmphasis paramemphasis,
+    [MarshalAs(UnmanagedType.I1)] bool quiet);
 }

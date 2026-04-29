@@ -195,20 +195,74 @@ public sealed class Model : IDisposable
         }
     }
 
-    /// <summary>
-    /// 优化模型
-    /// </summary>
-    public SolveStatus Optimize()
-    {
-        ReturnCode ret = ScipNativeMethods.SCIPsolve(_scipHandle);
-        ErrorHandler.CheckReturnCode(ret, "Failed to solve");
+/// <summary>
+/// 优化模型
+/// </summary>
+public SolveStatus Optimize()
+{
+    ReturnCode ret = ScipNativeMethods.SCIPsolve(_scipHandle);
+    ErrorHandler.CheckReturnCode(ret, "Failed to solve");
 
-        return ScipNativeMethods.SCIPgetStatus(_scipHandle);
-    }
+    return ScipNativeMethods.SCIPgetStatus(_scipHandle);
+}
 
-    /// <summary>
-    /// 获取最优解
-    /// </summary>
+/// <summary>
+/// 计数/枚举所有可行解（而不是只求解最优解）
+/// 使用此方法可以收集大量可行解
+/// 注意：执行后状态会是 Infeasible，这是预期行为
+/// </summary>
+public SolveStatus Count()
+{
+    // 设置安全的计数参数（包括禁用 restarts）
+    ReturnCode ret = ScipNativeMethods.SCIPsetParamsCountsols(_scipHandle);
+    ErrorHandler.CheckReturnCode(ret, "Failed to set counting parameters");
+
+    // 启动计数过程
+    ret = ScipNativeMethods.SCIPcount(_scipHandle);
+    ErrorHandler.CheckReturnCode(ret, "Failed to count solutions");
+
+    return ScipNativeMethods.SCIPgetStatus(_scipHandle);
+}
+
+/// <summary>
+/// 获取计数的解数量
+/// </summary>
+public long GetCountedSolutionsCount()
+{
+    IntPtr valid;
+    long count = ScipNativeMethods.SCIPgetNCountedSols(_scipHandle, out valid);
+    return count;
+}
+
+/// <summary>
+/// 获取计数的所有解（相对于 active variables 的稀疏解）
+/// 注意：这些解可能需要转换回原始变量空间
+/// </summary>
+public (IntPtr vars, int nvars, IntPtr sols, int nsols) GetCountedSparseSolutions()
+{
+    ReturnCode ret = ScipNativeMethods.SCIPgetCountedSparseSols(
+        _scipHandle,
+        out IntPtr vars,
+        out int nvars,
+        out IntPtr sols,
+        out int nsols);
+
+    ErrorHandler.CheckReturnCode(ret, "Failed to get counted sparse solutions");
+
+    return (vars, nvars, sols, nsols);
+}
+
+/// <summary>
+/// 释放计数的稀疏解
+/// </summary>
+public void FreeCountedSparseSolutions(ref IntPtr sols)
+{
+    ScipNativeMethods.SCIPfreeCountedSparseSols(_scipHandle, ref sols);
+}
+
+/// <summary>
+/// 获取最优解
+/// </summary>
     public Solution? GetBestSolution()
     {
         IntPtr solPtr = ScipNativeMethods.SCIPgetBestSol(_scipHandle);
@@ -262,18 +316,27 @@ public sealed class Model : IDisposable
         ErrorHandler.CheckReturnCode(ret, $"Failed to set bool param '{name}'");
     }
 
-    /// <summary>
-    /// 设置整数参数
-    /// </summary>
-    public void SetIntParam(string name, int value)
-    {
-        ReturnCode ret = ScipNativeMethods.SCIPsetIntParam(_scipHandle, name, value);
-        ErrorHandler.CheckReturnCode(ret, $"Failed to set int param '{name}'");
-    }
+/// <summary>
+/// 设置整数参数
+/// </summary>
+public void SetIntParam(string name, int value)
+{
+    ReturnCode ret = ScipNativeMethods.SCIPsetIntParam(_scipHandle, name, value);
+    ErrorHandler.CheckReturnCode(ret, $"Failed to set int param '{name}'");
+}
 
-    /// <summary>
-    /// 设置实数参数
-    /// </summary>
+/// <summary>
+/// 设置长整型参数
+/// </summary>
+public void SetLongParam(string name, long value)
+{
+    ReturnCode ret = ScipNativeMethods.SCIPsetLongintParam(_scipHandle, name, value);
+    ErrorHandler.CheckReturnCode(ret, $"Failed to set longint param '{name}'");
+}
+
+/// <summary>
+/// 设置实数参数
+/// </summary>
     public void SetRealParam(string name, double value)
     {
         ReturnCode ret = ScipNativeMethods.SCIPsetRealParam(_scipHandle, name, value);
@@ -327,23 +390,34 @@ public sealed class Model : IDisposable
         return value;
     }
 
-    /// <summary>
-    /// 获取字符串参数值
-    /// </summary>
-    public string? GetStringParam(string name)
+/// <summary>
+/// 获取字符串参数值
+/// </summary>
+public string? GetStringParam(string name)
+{
+    ReturnCode ret = ScipNativeMethods.SCIPgetStringParam(_scipHandle, name, out IntPtr value);
+    ErrorHandler.CheckReturnCode(ret, $"Failed to get string param '{name}'");
+    if (value == IntPtr.Zero)
     {
-        ReturnCode ret = ScipNativeMethods.SCIPgetStringParam(_scipHandle, name, out IntPtr value);
-        ErrorHandler.CheckReturnCode(ret, $"Failed to get string param '{name}'");
-        if (value == IntPtr.Zero)
-        {
-            return null;
-        }
-        return Marshal.PtrToStringAnsi(value);
+        return null;
     }
+    return Marshal.PtrToStringAnsi(value);
+}
 
-    /// <summary>
-    /// 释放资源
-    /// </summary>
+/// <summary>
+/// 设置参数强调模式
+/// </summary>
+/// <param name="paramEmphasis">参数强调模式</param>
+/// <param name="quiet">是否静默设置（不输出信息）</param>
+public void SetEmphasis(ParamEmphasis paramEmphasis, bool quiet = false)
+{
+    ReturnCode ret = ScipNativeMethods.SCIPsetEmphasis(_scipHandle, paramEmphasis, quiet);
+    ErrorHandler.CheckReturnCode(ret, $"Failed to set emphasis to {paramEmphasis}");
+}
+
+/// <summary>
+/// 释放资源
+/// </summary>
     public void Dispose()
     {
         if (!_disposed)

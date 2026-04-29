@@ -355,3 +355,69 @@ public enum Sense
     /// </summary>
     GreaterThanOrEqual = 1
 }
+
+/// <summary>
+/// SCIP 参数强调模式，对应 SCIP_PARAMEMPHASIS
+/// </summary>
+public enum ParamEmphasis
+{
+    /// <summary>
+    /// 默认参数设置
+    /// </summary>
+    Default = 0,
+
+    /// <summary>
+    /// CP 求解器模式（如无 LP 松弛）
+    /// </summary>
+    CPSolver = 1,
+
+    /// <summary>
+    /// 快速求解简单问题
+    /// </summary>
+    EasyCIP = 2,
+
+    /// <summary>
+    /// 快速检测可行性
+    /// </summary>
+    Feasibility = 3,
+
+    /// <summary>
+    /// 处理困难 LP
+    /// </summary>
+    HardLP = 4,
+
+    /// <summary>
+    /// 快速证明最优性
+    /// </summary>
+    Optimality = 5,
+
+    /// <summary>
+    /// 计数过程（获取可行且"快速"的计数）
+    /// </summary>
+    Counter = 6,
+
+    /// <summary>
+    /// 三阶段求解过程的可行性阶段
+    /// </summary>
+    PhaseFeas = 7,
+
+    /// <summary>
+    /// 三阶段求解过程的改进阶段
+    /// </summary>
+    PhaseImprove = 8,
+
+    /// <summary>
+    /// 三阶段求解过程的证明阶段
+    /// </summary>
+    PhaseProof = 9,
+
+    /// <summary>
+    /// 解决数值问题
+    /// </summary>
+    Numerics = 10,
+
+    /// <summary>
+    /// 基准测试模式
+    /// </summary>
+    Benchmark = 11
+}

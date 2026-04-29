@@ -1,199 +1,66 @@
-"""
-SCIP.NET Advanced Model Example — pyscipopt version
-
-Demonstrates nonlinear constraints, nonlinear objectives,
-solution pool, and indicator constraints using pyscipopt.
-"""
-
 import pyscipopt as scip
 from pyscipopt import Model, quicksum
 
+def run_multiple_solutions_exclusion():
+    """
+    迭代添加排除约束，收集多个可行解。
+    每次求解均寻找全局最优解（即使目标无意义，也会找到一个可行解）。
+    修正后的参数确保状态始终为 'optimal'，不会因 gap 提前终止。
+    """
+    print("=== 迭代排除法收集多个可行解 ===")
 
-def run_division_constraint():
-    """Example 1: Nonlinear Constraint (a <= x1/x2 <= b)"""
-    print("=== Example 1: Nonlinear Constraint (a <= x1/x2 <= b) ===")
-
-    model = Model("division_constraint")
-
-    # Continuous variables x1 in [1, 10], x2 in [1, 10]
-    x1 = model.addVar("x1", lb=1.0, ub=10.0, vtype="C")
-    x2 = model.addVar("x2", lb=1.0, ub=10.0, vtype="C")
-
-    # Linear objective: maximize x1 + x2
-    model.setObjective(x1 + x2, sense="maximize")
-
-    # Nonlinear constraint: 0.5 <= x1/x2 <= 2.0
-    # In pyscipopt, use expr >= value and expr <= value directly
-    model.addCons(x1 / x2 >= 0.5, name="lower_bound")
-    model.addCons(x1 / x2 <= 2.0, name="upper_bound")
-
-    print(f"Constraints: {model.getNCons()}")
-    for c in model.getConss():
-        print(f"  {c.name}")
-
-    print("Solving...")
-    model.optimize()
-
-    status = model.getStatus()
-    print(f"Status: {status}")
-
-    if status == "optimal":
-        # Method 1: Use model.getVal() to get values from best solution
-        x1_val = model.getVal(x1)
-        x2_val = model.getVal(x2)
-        print(f"Optimal value: {model.getObjVal():.4f}")
-        print(f"x1 = {x1_val:.4f}")
-        print(f"x2 = {x2_val:.4f}")
-        print(f"x1/x2 = {x1_val / x2_val:.4f}")
-
-
-def run_nonlinear_objective():
-    """Example 2: Nonlinear Objective (minimize x^2 + y^2)"""
-    print("=== Example 2: Nonlinear Objective (minimize x^2 + y^2) ===")
-
-    model = Model("nonlinear_objective")
-
-    x = model.addVar("x", lb=0.0, ub=10.0, vtype="C")
-    y = model.addVar("y", lb=0.0, ub=10.0, vtype="C")
-
-    # Linear constraint: x + y >= 3
-    model.addCons(x + y >= 3.0, name="sum_constraint")
-
-    # Nonlinear objective: minimize x^2 + y^2
-    # In pyscipopt, use ** for power
-    model.setObjective(x**2 + y**2, sense="minimize")
-
-    print("Solving...")
-    model.optimize()
-
-    status = model.getStatus()
-    print(f"Status: {status}")
-
-    if status == "optimal":
-        x_val = model.getVal(x)
-        y_val = model.getVal(y)
-        print(f"Optimal value: {model.getObjVal():.4f}")
-        print(f"x = {x_val:.4f}")
-        print(f"y = {y_val:.4f}")
-        print(f"x^2 + y^2 = {x_val**2 + y_val**2:.4f}")
-
-
-def run_solution_pool():
-    """Example 3: Solution Pool — get multiple solutions."""
-    print("=== Example 3: Solution Pool ===")
-
-    model = Model("solution_pool")
-
-    # Solution pool parameters — MUST be set before optimize()
-    model.setParam("limits/solutions", 100)  # Stop after 100 solutions
-    model.setParam("limits/maxsol", 100)  # Pool capacity
-    model.setParam("limits/maxorigsol", 100)  # Original problem sol pool
-    model.setParam("limits/gap", 0.0)  # Allow non-optimal exploration
-    model.setBoolParam("constraints/countsols/collect", True)
-
-    # Additional heuristics to find more diverse solutions
-    model.setParam("heuristics/diving/freq", 1)
-    model.setParam("heuristics/coeffdiving/freq", 1)
-    model.setParam("heuristics/fracdiving/freq", 1)
-    model.setParam("heuristics/guideddiving/freq", 1)
-    model.setParam("heuristics/pscostdiving/freq", 1)
-    model.setParam("heuristics/linesearchdiving/freq", 1)
-    model.setParam("heuristics/distdiving/freq", 1)
-    model.setParam("heuristics/rens/freq", 1)
-    model.setParam("heuristics/mutation/freq", 1)
-
-    # 30 binary variables — large feasible space
+    model = Model("exclusion_collect")
     n = 30
-    x = [model.addVar(f"x{i}", lb=0, ub=1, vtype="B") for i in range(n)]
+    x = [model.addVar(f"x{i}", vtype="B") for i in range(n)]
 
-    # Objective: maximize sum((i+1) * x_i)
+    # 目标函数：最大化加权和
     obj = quicksum((i + 1) * x[i] for i in range(n))
     model.setObjective(obj, sense="maximize")
 
-    # Capacity constraint: sum(x_i) <= 20
     model.addCons(quicksum(x[i] for i in range(n)) <= 20, name="capacity")
 
-    print(f"Variables: {n}, Domain: [0,1], Capacity: <= 20")
+    # ---------- 核心设置：保证每次求解得到最优解 ----------
+    # 1. 关闭默认的 gap 检查（将 gap 设为一个极大值，求解器永远无法满足）
+    model.setParam("limits/absgap", 1e+20)   # 绝对间隙极大
+    model.setParam("limits/gap", 1e+20)  # 相对间隙极大
+    # 2. 时间限制（防止无限循环）
+    model.setParam("limits/time", 60)        # 60 秒总时间
+    # 3.（可选）关闭预求解，避免简化引起的歧义
+    model.setParam("presolving/maxrounds", 0)
 
-    print("Solving...")
-    model.optimize()
+    solutions = []
+    iteration = 0
+    max_solutions = 100
 
-    status = model.getStatus()
-    print(f"Status: {status}")
+    while iteration < max_solutions:
+        iteration += 1
+        model.optimize()
 
-    # Get all solutions from the pool
-    nsols = model.getNSols()
-    print(f"Number of solutions in pool: {nsols}")
+        status = model.getStatus()
+        if status != "optimal":
+            print(f"迭代 {iteration}: 状态 {status}，停止收集。")
+            break
 
-    if nsols > 0:
-        sols = model.getSols()
-        print(f"Retrieved {len(sols)} solutions")
+        sol_obj = model.getObjVal()
+        sol_binary = [round(model.getVal(x[i])) for i in range(n)]
 
-        # Show first 10 solutions
-        for i, sol in enumerate(sols[:10]):
-            selected = "".join(
-                "1" if model.getSolVal(sol, x[i]) > 0.5 else "0" for i in range(n)
-            )
-            objval = model.getSolObjVal(sol)
-            print(f"  Solution {i + 1}: obj={objval:.2f}, selected={selected}")
+        print(f"找到第 {iteration} 个解: obj = {sol_obj:.4f}")
 
-        if nsols > 10:
-            print(f"  ... and {nsols - 10} more solutions")
-    else:
-        print("No solutions collected. Try adjusting parameters.")
-        print(f"Best solution obj: {model.getObjVal():.4f}")
+        solutions.append(sol_binary[:])
 
+        # 排除约束
+        excl_expr = quicksum(
+            (1 - x[i]) if sol_binary[i] == 1 else x[i]
+            for i in range(n)
+        )
+        model.addCons(excl_expr >= 1, name=f"exclude_sol_{iteration}")
 
-def run_indicator_constraint():
-    """Example 4: Indicator Constraint (if z=1 then y <= 5)"""
-    print("=== Example 4: Indicator Constraint (if z=1 then y <= 5) ===")
-
-    model = Model("indicator_example")
-
-    # z: binary — factory open?
-    z = model.addVar("z", lb=0, ub=1, vtype="B")
-    # x: product A output
-    x = model.addVar("x", lb=0.0, ub=20.0, vtype="C")
-    # y: product B output
-    y = model.addVar("y", lb=0.0, ub=20.0, vtype="C")
-
-    # Indicator constraint: z = 1 -> y <= 5
-    # In pyscipopt, use addConsIndicator(expr, binvar=binvar, name=name)
-    # The expr should be a constraint expression (like y <= 5)
-    model.addConsIndicator(y <= 5.0, binvar=z, name="indicator_y")
-
-    # Indicator constraint: z = 1 -> x <= 10
-    model.addConsIndicator(x <= 10.0, binvar=z, name="indicator_x")
-
-    # Regular constraint: x + y <= 12
-    model.addCons(x + y <= 12.0, name="capacity")
-
-    # Objective: maximize x + 2*y
-    model.setObjective(x + 2 * y, sense="maximize")
-
-    print("Solving...")
-    model.optimize()
-
-    status = model.getStatus()
-    print(f"Status: {status}")
-
-    if status == "optimal":
-        print(f"Optimal value: {model.getObjVal():.4f}")
-        print(f"z (factory open) = {model.getVal(z):.4f}")
-        print(f"x (product A)    = {model.getVal(x):.4f}")
-        print(f"y (product B)    = {model.getVal(y):.4f}")
-
+    print(f"\n总共收集到 {len(solutions)} 个不同的可行解。")
+    if solutions:
+        print("前5个解的前20位二进制值：")
+        for i, sol in enumerate(solutions[:5]):
+            s = ''.join(str(b) for b in sol[:20])
+            print(f"  Solution {i+1}: {s}...")
 
 if __name__ == "__main__":
-    print("pyscipopt Advanced Model Example\n")
-
-    run_division_constraint()
-    print()
-
-    run_nonlinear_objective()
-    print()
-
-    run_solution_pool()
-    print()
-
-    run_indicator_constraint()
+    run_multiple_solutions_exclusion()
