@@ -118,61 +118,53 @@ public class Example2_NonlinearModel
 
     /// <summary>
     /// 演示解池：获取多个解
-    /// 通过足够规模的问题 + 参数配置，让 SCIP 在求解过程中收集多个可行解
+    /// 通过扩大可行域 + 关键参数配置，让 SCIP 持续产生多个可行解
     /// </summary>
     private static void RunSolutionPool()
     {
         using var model = new Model("solution_pool");
-
-        // 解池参数
-        model.SetIntParam("limits/maxsol", 100);
-        model.SetIntParam("limits/maxorigsol", 100);
-        model.SetRealParam("limits/gap", 0.01);
-        model.SetIntParam("heuristics/feaspump/freq", 1);
-
-        // 10 个整数变量，域 [0, 9]，提供充足可行解空间
-        var vars = new Variable[10];
-        for (int i = 0; i < vars.Length; i++)
-        {
-            vars[i] = model.AddVariable($"x{i}", 0, 9, VariableType.Continuous);
-        }
-
-        // 目标：最大化 sum(x_i) — 简单的背包类目标
+        // 创建 30 个 0-1 变量（每个代表一个物品是否选取）
+        int n = 30;
+        var x = new Variable[n];
+        for (int i = 0; i < n; i++)
+            x[i] = model.AddVariable($"x{i}", 0, 1, VariableType.Binary);
+        // 目标：最大化总价值（价值 = i+1，线性递增）
         var obj = new LinearExpression();
-        for (int i = 0; i < vars.Length; i++)
-        {
-            obj = obj + vars[i];
-        }
+        for (int i = 0; i < n; i++)
+            obj = obj + (i + 1) * x[i];
         model.SetObjective(obj, ObjectiveSense.Maximize);
+        // 容量约束：重量之和 ≤ 20（重量 = 1，确保大量可行组合）
+        var weight = new LinearExpression();
+        for (int i = 0; i < n; i++)
+            weight = weight + x[i];
+        model.AddConstraint(weight.Leq(20));
+        // ----- 关键参数 -----
+        model.SetIntParam("limits/solutions", 100);     // 收集100个解
+        model.SetIntParam("limits/maxsol", 100000);     // 解池上限
+        model.SetIntParam("limits/maxorigsol", 100000); // 原始问题解池
+        model.SetRealParam("limits/gap", 1.0);          // 禁止最优性终止
+        model.SetRealParam("limits/time", 30);          // 30秒安全阀
+        model.SetIntParam("display/verblevel", 4);      // 显示进度
+        Console.WriteLine("Solving 0-1 knapsack...");
+        Console.WriteLine($"limits/solutions    = {model.GetIntParam("limits/solutions")}");
+        Console.WriteLine($"limits/maxsol       = {model.GetIntParam("limits/maxsol")}");
+        Console.WriteLine($"limits/maxorigsol   = {model.GetIntParam("limits/maxorigsol")}");
+        Console.WriteLine($"limits/gap          = {model.GetRealParam("limits/gap")}");
+        Console.WriteLine($"limits/time         = {model.GetRealParam("limits/time")}");
 
-        // 资源约束：sum((i+1)*x_i) <= 50 — 足够宽松，有大量可行解
-        var capacity = new LinearExpression();
-        for (int i = 0; i < vars.Length; i++)
-        {
-            capacity = capacity + (i + 1) * vars[i];
-        }
-        model.AddConstraint(capacity.Leq(50));
 
-        Console.WriteLine("Solving...");
         var status = model.Optimize();
+        var allSols = model.GetSolutions().ToList();
         Console.WriteLine($"Status: {status}");
-
-        // 从解池获取所有解
-        var solutions = model.GetSolutions();
-        Console.WriteLine($"Solution pool size: {solutions.Count}");
-
-        // 显示前 10 个解
-        int displayCount = Math.Min(solutions.Count, 10);
-        for (int i = 0; i < displayCount; i++)
+        Console.WriteLine($"Total solutions found: {allSols.Count}");
+        // 展示前5个解
+        int show = Math.Min(allSols.Count, 5);
+        for (int i = 0; i < show; i++)
         {
-            var sol = solutions[i];
-            var vals = string.Join(", ", vars.Select(v => $"{v.Name}={sol.GetValue(v):F0}"));
-            Console.WriteLine($"  Solution {i + 1}: obj={sol.ObjectiveValue:F2} | {vals}");
-        }
-
-        if (solutions.Count > displayCount)
-        {
-            Console.WriteLine($"  ... and {solutions.Count - displayCount} more solutions");
+            var sol = allSols[i];
+            var selected = string.Join("", x.Select(v => sol.GetValue(v) > 0.5 ? "1" : "0"));
+            Console.WriteLine($"  Sol {i + 1}: obj={sol.ObjectiveValue:F2}, selected={selected}");
+            Console.WriteLine($"model.getNsols()={model.SolutionCount}");
         }
     }
 

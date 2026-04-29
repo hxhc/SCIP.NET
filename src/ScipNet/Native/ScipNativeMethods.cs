@@ -430,4 +430,43 @@ internal static class ScipNativeMethods
         IntPtr vars,
         IntPtr vals,
         double rhs);
+
+
+// ===== 获取参数值 =====
+
+/// <summary>
+/// 获取整数参数值
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+public static extern ReturnCode SCIPgetIntParam(
+    IntPtr scip,
+    [MarshalAs(UnmanagedType.LPStr)] string name,
+    out int value);
+
+/// <summary>
+/// 获取实数参数值
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+public static extern ReturnCode SCIPgetRealParam(
+    IntPtr scip,
+    [MarshalAs(UnmanagedType.LPStr)] string name,
+    out double value);
+
+/// <summary>
+/// 获取布尔参数值
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+public static extern ReturnCode SCIPgetBoolParam(
+    IntPtr scip,
+    [MarshalAs(UnmanagedType.LPStr)] string name,
+    [MarshalAs(UnmanagedType.I1)] out bool value);
+
+/// <summary>
+/// 获取字符串参数值（调用者需释放返回的字符串）
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+public static extern ReturnCode SCIPgetStringParam(
+    IntPtr scip,
+    [MarshalAs(UnmanagedType.LPStr)] string name,
+    out IntPtr value);
 }

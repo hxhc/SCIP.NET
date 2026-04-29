@@ -298,6 +298,50 @@ public sealed class Model : IDisposable
     }
 
     /// <summary>
+    /// 获取整数参数值
+    /// </summary>
+    public int GetIntParam(string name)
+    {
+        ReturnCode ret = ScipNativeMethods.SCIPgetIntParam(_scipHandle, name, out int value);
+        ErrorHandler.CheckReturnCode(ret, $"Failed to get int param '{name}'");
+        return value;
+    }
+
+    /// <summary>
+    /// 获取实数参数值
+    /// </summary>
+    public double GetRealParam(string name)
+    {
+        ReturnCode ret = ScipNativeMethods.SCIPgetRealParam(_scipHandle, name, out double value);
+        ErrorHandler.CheckReturnCode(ret, $"Failed to get real param '{name}'");
+        return value;
+    }
+
+    /// <summary>
+    /// 获取布尔参数值
+    /// </summary>
+    public bool GetBoolParam(string name)
+    {
+        ReturnCode ret = ScipNativeMethods.SCIPgetBoolParam(_scipHandle, name, out bool value);
+        ErrorHandler.CheckReturnCode(ret, $"Failed to get bool param '{name}'");
+        return value;
+    }
+
+    /// <summary>
+    /// 获取字符串参数值
+    /// </summary>
+    public string? GetStringParam(string name)
+    {
+        ReturnCode ret = ScipNativeMethods.SCIPgetStringParam(_scipHandle, name, out IntPtr value);
+        ErrorHandler.CheckReturnCode(ret, $"Failed to get string param '{name}'");
+        if (value == IntPtr.Zero)
+        {
+            return null;
+        }
+        return Marshal.PtrToStringAnsi(value);
+    }
+
+    /// <summary>
     /// 释放资源
     /// </summary>
     public void Dispose()
