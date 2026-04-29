@@ -414,4 +414,20 @@ internal static class ScipNativeMethods
     public static extern double SCIPgetSolOrigObj(
         IntPtr scip,
         IntPtr sol);
+
+    // ===== Indicator 约束 =====
+
+    /// <summary>
+    /// 创建基本 Indicator 约束：binvar = 1 时，sum(vals[i]*vars[i]) &lt;= rhs 成立
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    public static extern ReturnCode SCIPcreateConsBasicIndicator(
+        IntPtr scip,
+        out IntPtr cons,
+        [MarshalAs(UnmanagedType.LPStr)] string name,
+        IntPtr binvar,
+        int nvars,
+        IntPtr vars,
+        IntPtr vals,
+        double rhs);
 }

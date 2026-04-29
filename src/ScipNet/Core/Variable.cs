@@ -61,6 +61,14 @@ public sealed class Variable
     }
 
     /// <summary>
+    /// 创建 Indicator 约束：当此二元变量为 1 时，给定线性约束成立
+    /// </summary>
+    public IndicatorConstraint Implies(LinearConstraint constraint, string? name = null)
+    {
+        return new IndicatorConstraint(this, constraint.Expression, constraint.Sense, constraint.RightHandSide, name);
+    }
+
+    /// <summary>
     /// 创建线性表达式（乘法）
     /// </summary>
     public static LinearExpression operator *(Variable variable, double coefficient)

@@ -254,12 +254,39 @@ public sealed class Model : IDisposable
     public int SolutionCount => ScipNativeMethods.SCIPgetNSols(_scipHandle);
 
     /// <summary>
+    /// 设置布尔参数
+    /// </summary>
+    public void SetBoolParam(string name, bool value)
+    {
+        ReturnCode ret = ScipNativeMethods.SCIPsetBoolParam(_scipHandle, name, value);
+        ErrorHandler.CheckReturnCode(ret, $"Failed to set bool param '{name}'");
+    }
+
+    /// <summary>
     /// 设置整数参数
     /// </summary>
     public void SetIntParam(string name, int value)
     {
         ReturnCode ret = ScipNativeMethods.SCIPsetIntParam(_scipHandle, name, value);
         ErrorHandler.CheckReturnCode(ret, $"Failed to set int param '{name}'");
+    }
+
+    /// <summary>
+    /// 设置实数参数
+    /// </summary>
+    public void SetRealParam(string name, double value)
+    {
+        ReturnCode ret = ScipNativeMethods.SCIPsetRealParam(_scipHandle, name, value);
+        ErrorHandler.CheckReturnCode(ret, $"Failed to set real param '{name}'");
+    }
+
+    /// <summary>
+    /// 设置字符串参数
+    /// </summary>
+    public void SetStringParam(string name, string value)
+    {
+        ReturnCode ret = ScipNativeMethods.SCIPsetStringParam(_scipHandle, name, value);
+        ErrorHandler.CheckReturnCode(ret, $"Failed to set string param '{name}'");
     }
 
     /// <summary>
