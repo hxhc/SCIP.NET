@@ -19,7 +19,7 @@ using ScipNet.Core;
 /// </summary>
 public class Example2_NonlinearModel
 {
-    public static void Main1()
+    public static void Run()
     {
         Console.WriteLine("SCIP.NET Nonlinear Model Example");
         Console.WriteLine();

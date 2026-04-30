@@ -5,14 +5,14 @@ using ScipNet.Core;
 /// <summary>
 /// Basic Model Example
 /// Demonstrates how to create a simple linear programming model and solve it
-/// 
+///
 /// This example shows:
 /// - Creating a model with variables
 /// - Setting an objective function (maximization)
 /// - Adding constraints using natural syntax
 /// - Solving the optimization problem
 /// - Retrieving the optimal solution and statistics
-/// 
+///
 /// Problem formulation:
 ///   Maximize: x + 2*y
 ///   Subject to:
@@ -23,7 +23,7 @@ using ScipNet.Core;
 /// </summary>
 public class Example1_BasicModel
 {
-    public static void Main1()
+    public static void Run()
     {
         Console.WriteLine("SCIP.NET Basic Model Example");
         // Console.WriteLine($"SCIP.NET Version: {ScipNet.Version}");

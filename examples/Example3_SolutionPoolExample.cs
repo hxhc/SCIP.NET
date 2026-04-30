@@ -17,9 +17,9 @@ using ScipNet.Core;
 /// Each "sparse solution" may contain multiple "concrete solutions".
 /// The unrolling is handled automatically by GetSparseSolutionsWithVariables().
 /// </summary>
-public class SolutionPoolExample
+public class Example3_SolutionPoolExample
 {
-    public static void Main()
+    public static void Run()
     {
         Console.WriteLine("=== Solution Pool Example: Enumerate All Feasible Solutions ===\n");
 
