@@ -4,51 +4,83 @@ using ScipNet;
 using ScipNet.Core;
 
 /// <summary>
-/// Advanced Model Example: Nonlinear Programming + Indicator Constraints
+/// Nonlinear Model Example: Nonlinear Functions and Constraints
 ///
-/// This example demonstrates:
-/// - Nonlinear constraints (e.g., division, exponentiation)
-/// - Nonlinear objective functions
-/// - Solution pool for collecting multiple feasible solutions
-/// - Indicator constraints (conditional constraints based on binary variables)
-/// - CP Solver mode (Constraint Programming mode without LP relaxation)
+/// This example demonstrates the use of all supported nonlinear functions:
+/// - Arithmetic: +, -, *, /
+/// - Power: Pow(x, exponent)
+/// - Exponential: Exp(x)
+/// - Logarithm: Log(x) - natural logarithm
+/// - Square root: Sqrt(x)
+/// - Absolute value: Abs(x)
+/// - Trigonometric: Sin(x), Cos(x) - input in radians
 ///
-/// Each example is in a separate method for clarity.
+/// Each example demonstrates a different nonlinear function or combination.
 /// </summary>
 public class Example2_NonlinearModel
 {
     public static void Main1()
     {
-        Console.WriteLine("SCIP.NET Advanced Model Example");
+        Console.WriteLine("SCIP.NET Nonlinear Model Example");
         Console.WriteLine();
 
-        // ===== Example 1: Nonlinear Constraint =====
-        Console.WriteLine("=== Example 1: Nonlinear Constraint (a <= x1/x2 <= b) ===");
+        // ===== Example 1: Division Constraint =====
+        Console.WriteLine("=== Example 1: Nonlinear Constraint - Division (a <= x1/x2 <= b) ===");
         RunDivisionConstraint();
 
         Console.WriteLine();
 
-        // ===== Example 2: Nonlinear Objective =====
-        Console.WriteLine("=== Example 2: Nonlinear Objective (minimize x^2 + y^2) ===");
-        RunNonlinearObjective();
+        // ===== Example 2: Power Function =====
+        Console.WriteLine("=== Example 2: Nonlinear Objective - Power Function (minimize x^2 + y^2) ===");
+        RunPowerFunction();
 
         Console.WriteLine();
 
-        // ===== Example 3: Solution Pool =====
-        Console.WriteLine("=== Example 3: Solution Pool (Collecting many feasible solutions) ===");
-        RunSolutionPool();
+        // ===== Example 3: Exponential Function =====
+        Console.WriteLine("=== Example 3: Exponential Function (minimize e^x + e^y) ===");
+        RunExponentialFunction();
 
         Console.WriteLine();
 
-        // ===== Example 4: Indicator Constraint =====
-        Console.WriteLine("=== Example 4: Indicator Constraint (if z=1 then y <= 2) ===");
-        RunIndicatorConstraint();
+        // ===== Example 4: Logarithm Function =====
+        Console.WriteLine("=== Example 4: Logarithm Function (minimize log(x) + log(y)) ===");
+        RunLogarithmFunction();
 
         Console.WriteLine();
 
-        // ===== Example 5: SetEmphasis - CP Solver Mode =====
-        Console.WriteLine("=== Example 5: SetEmphasis - CP Solver Mode ===");
-        RunSetEmphasisCPSolver();
+        // ===== Example 5: Absolute Value =====
+        Console.WriteLine("=== Example 5: Absolute Value (minimize |x| + |y|) ===");
+        RunAbsoluteValue();
+
+        Console.WriteLine();
+
+        // ===== Example 6: Square Root =====
+        Console.WriteLine("=== Example 6: Square Root (minimize sqrt(x) + sqrt(y)) ===");
+        RunSquareRoot();
+
+        Console.WriteLine();
+
+        // ===== Example 7: Sin and Cos Functions =====
+        Console.WriteLine("=== Example 7: Trigonometric Functions (minimize sin(x) + cos(y)) ===");
+        RunTrigonometricObjective();
+
+        Console.WriteLine();
+
+        // ===== Example 8: Trigonometric Constraint =====
+        Console.WriteLine("=== Example 8: Trigonometric Constraint (sin(x) >= 0.5) ===");
+        RunTrigonometricConstraint();
+
+        Console.WriteLine();
+
+        // ===== Example 9: Complex Trigonometric Expression =====
+        Console.WriteLine("=== Example 9: Complex Expression (sin^2(x) + cos^2(x)) ===");
+        RunComplexTrigonometric();
+
+        Console.WriteLine();
+
+        // ===== Example 10: Combined Nonlinear Functions =====
+        Console.WriteLine("=== Example 10: Combined Functions (minimize x^2 + exp(y) + |z|) ===");
+        RunCombinedFunctions();
     }
 
     /// <summary>
@@ -64,7 +96,7 @@ public class Example2_NonlinearModel
     ///
     /// Key points:
     /// - Use (NonlinearExpression) cast to enable nonlinear operations
-    /// - NonlinearExpression supports: +, -, *, /, Pow, Exp, Log, Sqrt, Abs
+    /// - NonlinearExpression supports: +, -, *, /, Pow, Exp, Log, Sqrt, Abs, Sin, Cos
     /// - Constraints can be created with Leq(), Geq(), Eq(), or Between()
     /// </summary>
     private static void RunDivisionConstraint()
@@ -95,14 +127,15 @@ public class Example2_NonlinearModel
                 Console.WriteLine($"Optimal value: {solution.ObjectiveValue:F4}");
                 Console.WriteLine($"x1 = {solution.GetValue(x1):F4}");
                 Console.WriteLine($"x2 = {solution.GetValue(x2):F4}");
+                Console.WriteLine($"x1/x2 = {solution.GetValue(x1) / solution.GetValue(x2):F4}");
             }
         }
     }
 
     /// <summary>
-    /// Example 2: Nonlinear Objective Function - minimize x^2 + y^2
+    /// Example 2: Power Function - minimize x^2 + y^2
     ///
-    /// This demonstrates how to create a nonlinear objective function.
+    /// This demonstrates how to create a nonlinear objective function using Pow().
     /// The objective is to minimize the Euclidean distance from the origin.
     ///
     /// Problem formulation:
@@ -115,9 +148,9 @@ public class Example2_NonlinearModel
     /// - Nonlinear expressions can be combined with +, -, *, /
     /// - The objective function can be linear or nonlinear
     /// </summary>
-    private static void RunNonlinearObjective()
+    private static void RunPowerFunction()
     {
-        using var model = new Model("nonlinear_objective");
+        using var model = new Model("power_function");
 
         // Create continuous variables x and y
         var x = model.AddVariable("x", 0.0, 10.0, VariableType.Continuous);
@@ -127,7 +160,6 @@ public class Example2_NonlinearModel
         model.AddConstraint((x + y).Geq(3.0));
 
         // Create nonlinear objective: minimize x^2 + y^2
-        // Use NonlinearExpression.Pow() for power operations
         NonlinearExpression objExpr = NonlinearExpression.Pow(x, 2.0) + NonlinearExpression.Pow(y, 2.0);
         model.SetObjective(objExpr, ObjectiveSense.Minimize);
 
@@ -143,193 +175,40 @@ public class Example2_NonlinearModel
                 Console.WriteLine($"Optimal value: {solution.ObjectiveValue:F4}");
                 Console.WriteLine($"x = {solution.GetValue(x):F4}");
                 Console.WriteLine($"y = {solution.GetValue(y):F4}");
+                Console.WriteLine($"x^2 = {Math.Pow(solution.GetValue(x), 2):F4}");
+                Console.WriteLine($"y^2 = {Math.Pow(solution.GetValue(y), 2):F4}");
             }
         }
     }
 
     /// <summary>
-    /// Example 3: Solution Pool - Collecting Many Feasible Solutions
+    /// Example 3: Exponential Function - minimize e^x + e^y
     ///
-    /// This demonstrates how to use SCIP's solution pool to collect multiple
-    /// feasible solutions from a combinatorial problem.
-    ///
-    /// Strategy:
-    /// - Binary variables create a large feasible space (C(50,25) ≈ 1.26e14 combinations)
-    /// - Flat objective function (all coefficients = 1) creates many optimal solutions
-    /// - Disable presolving to force branching
-    /// - Set large gap to prevent early optimality proof
-    /// - Collect solutions as they are found
+    /// This demonstrates the use of Exp() for exponential functions.
     ///
     /// Problem formulation:
-    ///   Maximize: sum(x[i])
-    ///   Subject to: sum(x[i]) <= 25
-    ///   With: x[i] in {0, 1} for i = 0..49
-    ///
-    /// Key parameters:
-    /// - limits/maxsol: Maximum number of solutions to store
-    /// - limits/gap: Large gap (100%) prevents optimality proof
-    /// - limits/time: Time limit for exploration
-    /// - constraints/countsols/collect: Enable solution collection
-    /// - presolving/maxrounds: Disable presolving (0 rounds)
-    /// </summary>
-    private static void RunSolutionPool()
-    {
-        using var model = new Model("solution_pool");
-
-        // Create 50 binary variables, feasible space ≈ C(50,25) = 1.26e14
-        int n = 50;
-        var x = new Variable[n];
-        for (int i = 0; i < n; i++)
-            x[i] = model.AddVariable($"x{i}", 0, 1, VariableType.Binary);
-
-        Console.WriteLine($"Variables: {n} binary variables (0-1)");
-        Console.WriteLine("Objective: maximize sum(x[i]) (flat objective, all coefficients=1)");
-        Console.WriteLine("Constraint: sum(x[i]) <= 25 (huge feasible space)");
-        Console.WriteLine("Strategy: Disable presolving + large gap → SCIP keeps branching, collecting many feasible solutions");
-
-        // === Objective: maximize sum(x[i]) - flat objective ===
-        var objExpr = new LinearExpression();
-        for (int i = 0; i < n; i++)
-            objExpr = objExpr + x[i];  // All weights are 1
-        // model.SetObjective(objExpr, ObjectiveSense.Maximize);
-
-        // === Constraint: sum(x[i]) <= 25 ===
-        var sumExpr = new LinearExpression();
-        for (int i = 0; i < n; i++)
-            sumExpr = sumExpr + x[i];
-        model.AddConstraint(sumExpr.Leq(25.0));
-
-        Console.WriteLine($"Number of constraints: {model.Constraints.Count}");
-        Console.WriteLine($"Theoretical number of optimal solutions: C(50,25) ≈ 1.26e14");
-
-        // ----- Key parameters: make SCIP keep branching to collect many solutions -----
-        // Solution pool capacity
-        model.SetIntParam("limits/maxsol", 100000);
-        model.SetIntParam("limits/maxorigsol", 100000);
-
-        // Key: Set large gap to prevent SCIP from proving optimality
-        // This makes SCIP keep exploring branches and generating different feasible solutions
-        model.SetRealParam("limits/gap", 100.0);  // 100% gap
-
-        // Time limit: give enough time for exploration
-        model.SetRealParam("limits/time", 60);  // 60 seconds
-
-        // Collect solutions
-        model.SetBoolParam("constraints/countsols/collect", true);
-
-        // Disable presolving to force branching
-        try { model.SetIntParam("presolving/maxrounds", 0); } catch { }
-
-        // Disable some fast heuristics
-        try { model.SetIntParam("heuristics/trivial/freq", -1); } catch { }
-
-        model.SetIntParam("display/verblevel", 4);
-        Console.WriteLine("\nStarting to solve (flat objective + large gap, generating many feasible solutions)...");
-
-        // ===== Call optimization and get solution pool =====
-        Console.WriteLine("Solving...");
-        var status = model.Optimize();
-        Console.WriteLine($"\nSolve status: {status}");
-
-        // Get all solutions from the solution pool
-        var solutions = model.GetSolutions();
-        Console.WriteLine($"\nNumber of solutions in pool: {solutions.Count}");
-
-        if (solutions.Count > 0)
-        {
-            // Display the best solution
-            var bestSol = model.GetBestSolution();
-            if (bestSol != null)
-            {
-                Console.WriteLine($"\n=== Best solution (objective value: {bestSol.ObjectiveValue:F2}) ===");
-                var selected = string.Concat(x.Select(v => bestSol.GetValue(v) > 0.5 ? "1" : "0"));
-                Console.WriteLine($"  Selected variables: {selected.Substring(0, Math.Min(40, selected.Length))}...");
-                Console.WriteLine($"  Number selected: {selected.Count(c => c == '1')}");
-            }
-
-            // Display first 20 solutions (show diversity)
-            int displayCount = Math.Min(20, solutions.Count);
-            Console.WriteLine($"\n=== First {displayCount} solutions (showing diversity) ===");
-            for (int idx = 0; idx < displayCount; idx++)
-            {
-                var sol = solutions[idx];
-                var selected = string.Concat(x.Select(v => sol.GetValue(v) > 0.5 ? "1" : "0"));
-                Console.WriteLine($"  Solution {idx + 1}: obj={sol.ObjectiveValue:F2}, " +
-                    $"selected={selected.Count(c => c == '1')}");
-            }
-
-            if (solutions.Count > 20)
-                Console.WriteLine($"  ... and {solutions.Count - 20} more solutions not shown");
-
-            // Statistics
-            Console.WriteLine($"\n=== Solution Pool Statistics ===");
-            Console.WriteLine($"  Number of solutions: {solutions.Count}");
-            Console.WriteLine($"  Best objective value: {solutions.Max(s => s.ObjectiveValue):F2}");
-            Console.WriteLine($"  Worst objective value: {solutions.Min(s => s.ObjectiveValue):F2}");
-            Console.WriteLine($"  Average objective value: {solutions.Average(s => s.ObjectiveValue):F2}");
-
-            // Check solution diversity
-            Console.WriteLine($"\n=== Solution Diversity Check (first 100) ===");
-            int distinctCount = 1;
-            var firstPattern = string.Concat(x.Select(v => solutions[0].GetValue(v) > 0.5 ? "1" : "0"));
-            for (int i = 1; i < Math.Min(100, solutions.Count); i++)
-            {
-                var pattern = string.Concat(x.Select(v => solutions[i].GetValue(v) > 0.5 ? "1" : "0"));
-                if (pattern != firstPattern)
-                    distinctCount++;
-            }
-            Console.WriteLine($"  Found {distinctCount} different patterns in first 100 solutions");
-        }
-        else
-        {
-            Console.WriteLine("\nNo solutions collected, try adjusting parameters...");
-            var bestSol = model.GetBestSolution();
-            if (bestSol != null)
-                Console.WriteLine($"Best objective value: {bestSol.ObjectiveValue:F2}");
-        }
-    }
-
-    /// <summary>
-    /// Example 4: Indicator Constraints
-    ///
-    /// This demonstrates how to create conditional constraints that are only active
-    /// when a binary variable has a specific value.
-    ///
-    /// Problem formulation:
-    ///   Maximize: x + 2*y
-    ///   Subject to:
-    ///     if z = 1 then y <= 5
-    ///     if z = 1 then x <= 10
-    ///     x + y <= 12
-    ///   With: z in {0, 1}, x, y in [0, 20]
+    ///   Minimize: e^x + e^y
+    ///   Subject to: x + y >= 2.0
+    ///   With: x, y in [0.0, 5.0]
     ///
     /// Key points:
-    /// - Use z.Implies(constraint) to create: if z=1 then constraint is active
-    /// - Indicator constraints link binary decisions to continuous constraints
-    /// - Two ways to create: using Implies() or using IndicatorConstraint constructor
+    /// - Use NonlinearExpression.Exp(x) for e^x
+    /// - Exponential functions grow very quickly
+    /// - Useful for modeling growth or decay processes
     /// </summary>
-    private static void RunIndicatorConstraint()
+    private static void RunExponentialFunction()
     {
-        using var model = new Model("indicator_example");
+        using var model = new Model("exponential_function");
 
-        // Create binary variable z (decision) and continuous variables x, y
-        var z = model.AddVariable("z", 0, 1, VariableType.Binary);
-        var x = model.AddVariable("x", 0, 20, VariableType.Continuous);
-        var y = model.AddVariable("y", 0, 20, VariableType.Continuous);
+        var x = model.AddVariable("x", 0.0, 5.0, VariableType.Continuous);
+        var y = model.AddVariable("y", 0.0, 5.0, VariableType.Continuous);
 
-        // Create indicator constraint: if z = 1 then y <= 5
-        // Using the convenient Implies() method
-        var yLeq5 = new LinearExpression().AddTerm(y, 1.0).Leq(5.0);
-        model.AddConstraint(z.Implies(yLeq5));
+        // Add constraint
+        model.AddConstraint((x + y).Geq(2.0));
 
-        // Create indicator constraint: if z = 1 then x <= 10
-        // Using the IndicatorConstraint constructor directly
-        var xLeq10 = new LinearExpression().AddTerm(x, 1.0).Leq(10.0);
-        model.AddConstraint(new IndicatorConstraint(z, xLeq10.Expression, xLeq10.Sense, xLeq10.RightHandSide));
-
-        // Add regular constraint
-        model.AddConstraint((x + y).Leq(12.0));
-        model.SetObjective(x + 2 * y, ObjectiveSense.Maximize);
+        // Create objective: minimize e^x + e^y
+        var objExpr = NonlinearExpression.Exp(x) + NonlinearExpression.Exp(y);
+        model.SetObjective(objExpr, ObjectiveSense.Minimize);
 
         Console.WriteLine("Solving...");
         var status = model.Optimize();
@@ -340,61 +219,351 @@ public class Example2_NonlinearModel
             var solution = model.GetBestSolution();
             if (solution != null)
             {
+                double xVal = solution.GetValue(x);
+                double yVal = solution.GetValue(y);
                 Console.WriteLine($"Optimal value: {solution.ObjectiveValue:F4}");
-                Console.WriteLine($"z (factory open) = {solution.GetValue(z):F4}");
-                Console.WriteLine($"x (product A)    = {solution.GetValue(x):F4}");
-                Console.WriteLine($"y (product B)    = {solution.GetValue(y):F4}");
+                Console.WriteLine($"x = {xVal:F4}, e^x = {Math.Exp(xVal):F4}");
+                Console.WriteLine($"y = {yVal:F4}, e^y = {Math.Exp(yVal):F4}");
             }
         }
     }
 
     /// <summary>
-    /// Example 5: SetEmphasis - CP Solver Mode
+    /// Example 4: Logarithm Function - minimize log(x) + log(y)
     ///
-    /// This demonstrates how to configure SCIP to behave more like a pure
-    /// Constraint Programming (CP) solver by disabling LP relaxation.
+    /// This demonstrates the use of Log() for natural logarithm.
     ///
     /// Problem formulation:
-    ///   Maximize: x + 2*y
-    ///   Subject to:
-    ///     if z = 1 then y <= 5
-    ///     x + y <= 12
-    ///   With: z in {0, 1}, x, y in [0, 20]
+    ///   Maximize: log(x) + log(y)
+    ///   Subject to: x + y <= 20.0
+    ///   With: x, y in [1.0, 10.0]
     ///
     /// Key points:
-    /// - SetEmphasis(ParamEmphasis.CPSolver) disables LP relaxation
-    /// - CP mode is better for highly combinatorial problems
-    /// - Trade-off: faster for some problems, but might not find optimal solution
+    /// - Use NonlinearExpression.Log(x) for natural logarithm (ln)
+    /// - Logarithm is only defined for positive values
+    /// - Useful for multiplicative relationships
     /// </summary>
-    private static void RunSetEmphasisCPSolver()
+    private static void RunLogarithmFunction()
     {
-        using var cpModel = new Model("cp_test");
-        var z = cpModel.AddVariable("z", 0, 1, VariableType.Binary);
-        var x = cpModel.AddVariable("x", 0, 20, VariableType.Continuous);
-        var y = cpModel.AddVariable("y", 0, 20, VariableType.Continuous);
+        using var model = new Model("logarithm_function");
 
-        var yLeq5 = new LinearExpression().AddTerm(y, 1.0).Leq(5.0);
-        cpModel.AddConstraint(z.Implies(yLeq5));
+        var x = model.AddVariable("x", 1.0, 10.0, VariableType.Continuous);
+        var y = model.AddVariable("y", 1.0, 10.0, VariableType.Continuous);
 
-        cpModel.AddConstraint((x + y).Leq(12.0));
-        cpModel.SetObjective(x + 2 * y, ObjectiveSense.Maximize);
+        // Add constraint
+        model.AddConstraint((x + y).Leq(20.0));
 
-        // Set to CP Solver mode (disable LP relaxation, behave more like a pure CP solver)
-        cpModel.SetEmphasis(ParamEmphasis.CPSolver);
-        Console.WriteLine("Solving with CP Solver mode (LP relaxation disabled)...");
+        // Create objective: maximize log(x) + log(y)
+        var objExpr = NonlinearExpression.Log(x) + NonlinearExpression.Log(y);
+        model.SetObjective(objExpr, ObjectiveSense.Maximize);
 
-        var status = cpModel.Optimize();
-        Console.WriteLine($"CP Solver status: {status}");
+        Console.WriteLine("Solving...");
+        var status = model.Optimize();
+        Console.WriteLine($"Status: {status}");
 
         if (status == SolveStatus.Optimal)
         {
-            var solution = cpModel.GetBestSolution();
+            var solution = model.GetBestSolution();
             if (solution != null)
             {
+                double xVal = solution.GetValue(x);
+                double yVal = solution.GetValue(y);
                 Console.WriteLine($"Optimal value: {solution.ObjectiveValue:F4}");
-                Console.WriteLine($"z = {solution.GetValue(z):F4}");
-                Console.WriteLine($"x = {solution.GetValue(x):F4}");
-                Console.WriteLine($"y = {solution.GetValue(y):F4}");
+                Console.WriteLine($"x = {xVal:F4}, log(x) = {Math.Log(xVal):F4}");
+                Console.WriteLine($"y = {yVal:F4}, log(y) = {Math.Log(yVal):F4}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Example 5: Absolute Value - minimize |x| + |y|
+    ///
+    /// This demonstrates the use of Abs() for absolute value.
+    ///
+    /// Problem formulation:
+    ///   Minimize: |x| + |y|
+    ///   Subject to: x + y >= 5.0
+    ///   With: x, y in [-10.0, 10.0]
+    ///
+    /// Key points:
+    /// - Use NonlinearExpression.Abs(x) for absolute value |x|
+    /// - Absolute value creates a "V" shaped function
+    /// - Useful for modeling deviations or distances
+    /// </summary>
+    private static void RunAbsoluteValue()
+    {
+        using var model = new Model("absolute_value");
+
+        var x = model.AddVariable("x", -10.0, 10.0, VariableType.Continuous);
+        var y = model.AddVariable("y", -10.0, 10.0, VariableType.Continuous);
+
+        // Add constraint
+        model.AddConstraint((x + y).Geq(5.0));
+
+        // Create objective: minimize |x| + |y|
+        var objExpr = NonlinearExpression.Abs(x) + NonlinearExpression.Abs(y);
+        model.SetObjective(objExpr, ObjectiveSense.Minimize);
+
+        Console.WriteLine("Solving...");
+        var status = model.Optimize();
+        Console.WriteLine($"Status: {status}");
+
+        if (status == SolveStatus.Optimal)
+        {
+            var solution = model.GetBestSolution();
+            if (solution != null)
+            {
+                double xVal = solution.GetValue(x);
+                double yVal = solution.GetValue(y);
+                Console.WriteLine($"Optimal value: {solution.ObjectiveValue:F4}");
+                Console.WriteLine($"x = {xVal:F4}, |x| = {Math.Abs(xVal):F4}");
+                Console.WriteLine($"y = {yVal:F4}, |y| = {Math.Abs(yVal):F4}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Example 6: Square Root - minimize sqrt(x) + sqrt(y)
+    ///
+    /// This demonstrates the use of Sqrt() for square root.
+    /// Note: Sqrt(x) is equivalent to Pow(x, 0.5).
+    ///
+    /// Problem formulation:
+    ///   Minimize: sqrt(x) + sqrt(y)
+    ///   Subject to: x + y >= 10.0
+    ///   With: x, y in [0.0, 20.0]
+    ///
+    /// Key points:
+    /// - Use NonlinearExpression.Sqrt(x) for square root
+    /// - Square root is concave (increasing at decreasing rate)
+    /// - Useful for diminishing returns models
+    /// </summary>
+    private static void RunSquareRoot()
+    {
+        using var model = new Model("square_root");
+
+        var x = model.AddVariable("x", 0.0, 20.0, VariableType.Continuous);
+        var y = model.AddVariable("y", 0.0, 20.0, VariableType.Continuous);
+
+        // Add constraint
+        model.AddConstraint((x + y).Geq(10.0));
+
+        // Create objective: minimize sqrt(x) + sqrt(y)
+        var objExpr = NonlinearExpression.Sqrt(x) + NonlinearExpression.Sqrt(y);
+        model.SetObjective(objExpr, ObjectiveSense.Minimize);
+
+        Console.WriteLine("Solving...");
+        var status = model.Optimize();
+        Console.WriteLine($"Status: {status}");
+
+        if (status == SolveStatus.Optimal)
+        {
+            var solution = model.GetBestSolution();
+            if (solution != null)
+            {
+                double xVal = solution.GetValue(x);
+                double yVal = solution.GetValue(y);
+                Console.WriteLine($"Optimal value: {solution.ObjectiveValue:F4}");
+                Console.WriteLine($"x = {xVal:F4}, sqrt(x) = {Math.Sqrt(xVal):F4}");
+                Console.WriteLine($"y = {yVal:F4}, sqrt(y) = {Math.Sqrt(yVal):F4}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Example 7: Trigonometric Functions - minimize sin(x) + cos(y)
+    ///
+    /// This demonstrates basic usage of sin() and cos() functions.
+    ///
+    /// Problem formulation:
+    ///   Minimize: sin(x) + cos(y)
+    ///   Subject to: x, y in [0, 2*PI]
+    ///
+    /// Key points:
+    /// - Use NonlinearExpression.Sin(x) for sine
+    /// - Use NonlinearExpression.Cos(x) for cosine
+    /// - Input is in RADIANS (not degrees)
+    /// - To convert degrees to radians: radians = degrees * Math.PI / 180
+    /// </summary>
+    private static void RunTrigonometricObjective()
+    {
+        using var model = new Model("trigonometric_objective");
+
+        // Create continuous variables in radians [0, 2*PI]
+        double twoPI = 2.0 * Math.PI;
+        var x = model.AddVariable("x", 0.0, twoPI, VariableType.Continuous);
+        var y = model.AddVariable("y", 0.0, twoPI, VariableType.Continuous);
+
+        // Create objective: minimize sin(x) + cos(y)
+        NonlinearExpression objExpr = NonlinearExpression.Sin(x) + NonlinearExpression.Cos(y);
+        model.SetObjective(objExpr, ObjectiveSense.Minimize);
+
+        Console.WriteLine("Solving...");
+        var status = model.Optimize();
+        Console.WriteLine($"Status: {status}");
+
+        if (status == SolveStatus.Optimal)
+        {
+            var solution = model.GetBestSolution();
+            if (solution != null)
+            {
+                double xVal = solution.GetValue(x);
+                double yVal = solution.GetValue(y);
+                Console.WriteLine($"Optimal value: {solution.ObjectiveValue:F6}");
+                Console.WriteLine($"x = {xVal:F6} radians ({xVal * 180.0 / Math.PI:F2} degrees)");
+                Console.WriteLine($"y = {yVal:F6} radians ({yVal * 180.0 / Math.PI:F2} degrees)");
+                Console.WriteLine($"sin(x) = {Math.Sin(xVal):F6}");
+                Console.WriteLine($"cos(y) = {Math.Cos(yVal):F6}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Example 8: Trigonometric Constraint - sin(x) >= 0.5
+    ///
+    /// This demonstrates using trigonometric functions in constraints.
+    ///
+    /// Problem formulation:
+    ///   Maximize: x
+    ///   Subject to: sin(x) >= 0.5
+    ///   With: x in [0, 2*PI]
+    ///
+    /// Key points:
+    /// - Trigonometric functions can be used in constraints
+    /// - Creates feasible regions based on trigonometric conditions
+    /// - Useful for periodic constraints or angle-based problems
+    /// </summary>
+    private static void RunTrigonometricConstraint()
+    {
+        using var model = new Model("trigonometric_constraint");
+
+        double twoPI = 2.0 * Math.PI;
+        var x = model.AddVariable("x", 0.0, twoPI, VariableType.Continuous);
+
+        // Add constraint: sin(x) >= 0.5
+        var sinX = NonlinearExpression.Sin(x);
+        model.AddConstraint(sinX.Geq(0.5));
+
+        // Maximize x
+        model.SetObjective(x, ObjectiveSense.Maximize);
+
+        Console.WriteLine("Solving...");
+        var status = model.Optimize();
+        Console.WriteLine($"Status: {status}");
+
+        if (status == SolveStatus.Optimal)
+        {
+            var solution = model.GetBestSolution();
+            if (solution != null)
+            {
+                double xVal = solution.GetValue(x);
+                Console.WriteLine($"Optimal value (x): {xVal:F6} radians ({xVal * 180.0 / Math.PI:F2} degrees)");
+                Console.WriteLine($"sin(x) = {Math.Sin(xVal):F6}");
+                Console.WriteLine($"Constraint sin(x) >= 0.5: {Math.Sin(xVal) >= 0.5}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Example 9: Complex Trigonometric Expression - sin(x)^2 + cos(x)^2
+    ///
+    /// This demonstrates combining trigonometric functions with other operations.
+    ///
+    /// Problem formulation:
+    ///   Minimize: sin(x)^2 + cos(x)^2 (should be 1.0)
+    ///   Subject to: x in [0, PI]
+    ///
+    /// This is a test case - the objective should always be 1.0
+    /// due to the trigonometric identity: sin^2(x) + cos^2(x) = 1
+    ///
+    /// Key points:
+    /// - Can combine trigonometric functions with Pow()
+    /// - Demonstrates expression composition
+    /// - Useful for verifying trigonometric identities in optimization
+    /// </summary>
+    private static void RunComplexTrigonometric()
+    {
+        using var model = new Model("complex_trigonometric");
+
+        var x = model.AddVariable("x", 0.0, Math.PI, VariableType.Continuous);
+
+        // Create expression: sin(x)^2 + cos(x)^2
+        var sinX = NonlinearExpression.Sin(x);
+        var cosX = NonlinearExpression.Cos(x);
+        var sinSquared = NonlinearExpression.Pow(sinX, 2.0);
+        var cosSquared = NonlinearExpression.Pow(cosX, 2.0);
+        var objExpr = sinSquared + cosSquared;
+
+        model.SetObjective(objExpr, ObjectiveSense.Minimize);
+
+        Console.WriteLine("Solving sin(x)^2 + cos(x)^2...");
+        var status = model.Optimize();
+        Console.WriteLine($"Status: {status}");
+
+        if (status == SolveStatus.Optimal)
+        {
+            var solution = model.GetBestSolution();
+            if (solution != null)
+            {
+                double xVal = solution.GetValue(x);
+                Console.WriteLine($"Optimal value: {solution.ObjectiveValue:F6} (expected: 1.0)");
+                Console.WriteLine($"x = {xVal:F6} radians ({xVal * 180.0 / Math.PI:F2} degrees)");
+                Console.WriteLine($"sin(x) = {Math.Sin(xVal):F6}, sin(x)^2 = {Math.Sin(xVal) * Math.Sin(xVal):F6}");
+                Console.WriteLine($"cos(x) = {Math.Cos(xVal):F6}, cos(x)^2 = {Math.Cos(xVal) * Math.Cos(xVal):F6}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Example 10: Combined Nonlinear Functions
+    ///
+    /// This demonstrates combining multiple types of nonlinear functions.
+    ///
+    /// Problem formulation:
+    ///   Minimize: x^2 + exp(y) + |z|
+    ///   Subject to: x + y + z >= 5.0
+    ///   With: x, z in [-5.0, 5.0], y in [0.0, 5.0]
+    ///
+    /// Key points:
+    /// - Can combine different types of nonlinear functions
+    /// - Mix of convex (x^2, exp(y)) and non-convex (|z|) functions
+    /// - Demonstrates flexibility of nonlinear expression system
+    /// </summary>
+    private static void RunCombinedFunctions()
+    {
+        using var model = new Model("combined_functions");
+
+        var x = model.AddVariable("x", -5.0, 5.0, VariableType.Continuous);
+        var y = model.AddVariable("y", 0.0, 5.0, VariableType.Continuous);
+        var z = model.AddVariable("z", -5.0, 5.0, VariableType.Continuous);
+
+        // Add constraint
+        model.AddConstraint((x + y + z).Geq(5.0));
+
+        // Create objective: minimize x^2 + exp(y) + |z|
+        var xSquared = NonlinearExpression.Pow(x, 2.0);
+        var expY = NonlinearExpression.Exp(y);
+        var absZ = NonlinearExpression.Abs(z);
+        var objExpr = xSquared + expY + absZ;
+
+        model.SetObjective(objExpr, ObjectiveSense.Minimize);
+
+        Console.WriteLine("Solving combined nonlinear functions...");
+        var status = model.Optimize();
+        Console.WriteLine($"Status: {status}");
+
+        if (status == SolveStatus.Optimal)
+        {
+            var solution = model.GetBestSolution();
+            if (solution != null)
+            {
+                double xVal = solution.GetValue(x);
+                double yVal = solution.GetValue(y);
+                double zVal = solution.GetValue(z);
+                Console.WriteLine($"Optimal value: {solution.ObjectiveValue:F4}");
+                Console.WriteLine($"x = {xVal:F4}, x^2 = {Math.Pow(xVal, 2):F4}");
+                Console.WriteLine($"y = {yVal:F4}, exp(y) = {Math.Exp(yVal):F4}");
+                Console.WriteLine($"z = {zVal:F4}, |z| = {Math.Abs(zVal):F4}");
             }
         }
     }

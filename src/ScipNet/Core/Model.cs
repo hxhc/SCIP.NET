@@ -12,6 +12,8 @@ public sealed class Model : IDisposable
     private readonly ScipHandle _scipHandle;
     private readonly Dictionary<string, Variable> _variables;
     private readonly Dictionary<string, Constraint> _constraints;
+    private readonly Dictionary<IntPtr, Variable> _varPtrToVarMap; // Mapping from var pointer to Variable object
+    private readonly Dictionary<string, Variable> _varNameToVarMap; // Mapping from var name to Variable object
     private bool _disposed;
 
     /// <summary>
@@ -47,6 +49,8 @@ public sealed class Model : IDisposable
         _scipHandle = new ScipHandle(scipPtr, true);
         _variables = new Dictionary<string, Variable>();
         _constraints = new Dictionary<string, Constraint>();
+        _varPtrToVarMap = new Dictionary<IntPtr, Variable>();
+        _varNameToVarMap = new Dictionary<string, Variable>(); // For name-based lookup
         Name = name;
         ObjectiveSense = ObjectiveSense.Minimize;
 
@@ -82,6 +86,8 @@ public sealed class Model : IDisposable
 
         var variable = new Variable(this, name, varPtr, type, lowerBound, upperBound);
         _variables[name] = variable;
+        _varPtrToVarMap[varPtr] = variable; // Add to pointer-to-variable mapping
+        _varNameToVarMap[name] = variable; // Add to name-to-variable mapping
         return variable;
     }
 
@@ -207,17 +213,34 @@ public SolveStatus Optimize()
 }
 
 /// <summary>
-/// 计数/枚举所有可行解（而不是只求解最优解）
-/// 使用此方法可以收集大量可行解
-/// 注意：执行后状态会是 Infeasible，这是预期行为
+/// Count/enumerate all feasible solutions (instead of just solving for optimal)
+/// After calling this method, the status will be Infeasible, which is expected behavior.
+///
+/// IMPORTANT: This method must be called BEFORE GetSparseSolutionsWithVariables().
+/// The countsols constraint handler is automatically included by this method.
+///
+/// Required parameters (set before calling):
+///   model.SetEmphasis(ParamEmphasis.Counter, quiet: true);
+///   model.SetBoolParam("constraints/countsols/collect", true);
+///   model.SetLongParam("constraints/countsols/sollimit", 100000);
 /// </summary>
 public SolveStatus Count()
 {
-    // 设置安全的计数参数（包括禁用 restarts）
+    // Include the countsols constraint handler if not already included
+    // Note: In SCIP 9.0+, this IS included by SCIPincludeDefaultPlugins(),
+    // so we need to check if it exists before including it to avoid InvalidData error
+    IntPtr conshdlr = ScipNativeMethods.SCIPfindConshdlr(_scipHandle, "countsols");
+    if (conshdlr == IntPtr.Zero)
+    {
+        ReturnCode includeRet = ScipNativeMethods.SCIPincludeConshdlrCountsols(_scipHandle);
+        ErrorHandler.CheckReturnCode(includeRet, "Failed to include countsols constraint handler");
+    }
+
+    // Set safe counting parameters (including disabling restarts)
     ReturnCode ret = ScipNativeMethods.SCIPsetParamsCountsols(_scipHandle);
     ErrorHandler.CheckReturnCode(ret, "Failed to set counting parameters");
 
-    // 启动计数过程
+    // Start the counting process
     ret = ScipNativeMethods.SCIPcount(_scipHandle);
     ErrorHandler.CheckReturnCode(ret, "Failed to count solutions");
 
@@ -235,29 +258,135 @@ public long GetCountedSolutionsCount()
 }
 
 /// <summary>
-/// 获取计数的所有解（相对于 active variables 的稀疏解）
-/// 注意：这些解可能需要转换回原始变量空间
+/// Get raw counted sparse solutions (relative to active variables)
+/// Note: SCIPgetCountedSparseSols returns void, so no error code to check
 /// </summary>
 public (IntPtr vars, int nvars, IntPtr sols, int nsols) GetCountedSparseSolutions()
 {
-    ReturnCode ret = ScipNativeMethods.SCIPgetCountedSparseSols(
+    ScipNativeMethods.SCIPgetCountedSparseSols(
         _scipHandle,
         out IntPtr vars,
         out int nvars,
         out IntPtr sols,
         out int nsols);
 
-    ErrorHandler.CheckReturnCode(ret, "Failed to get counted sparse solutions");
-
     return (vars, nvars, sols, nsols);
 }
 
 /// <summary>
-/// 释放计数的稀疏解
+/// Check if sparse solutions are available after calling Count()
+/// Note: No need to free the returned arrays - they are managed internally by SCIP
 /// </summary>
-public void FreeCountedSparseSolutions(ref IntPtr sols)
+public bool AreSparseSolutionsAvailable()
 {
-    ScipNativeMethods.SCIPfreeCountedSparseSols(_scipHandle, ref sols);
+    try
+    {
+        var (_, _, sols, nsols) = GetCountedSparseSolutions();
+        bool available = (nsols > 0 && sols != IntPtr.Zero);
+        // No need to free - arrays are managed internally by SCIP
+        return available;
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+/// <summary>
+/// Get all sparse solutions unrolled into concrete solutions with variable values.
+///
+/// This follows the official SCIP approach:
+/// 1. Get sparse solutions via SCIPgetCountedSparseSols
+/// 2. For each sparse solution, iterate through concrete solutions
+///    using SCIPsparseSolGetFirstSol / SCIPsparseSolGetNextSol
+/// 3. Map variable pointers back to Variable objects
+///
+/// MUST be called after Count() with constraints/countsols/collect = true.
+/// </summary>
+public List<Dictionary<Variable, double>> GetSparseSolutionsWithVariables()
+{
+    var solutions = new List<Dictionary<Variable, double>>();
+
+    // Get sparse solutions
+    var (vars, nvars, sols, nsols) = GetCountedSparseSolutions();
+
+    if (nsols == 0 || sols == IntPtr.Zero)
+    {
+        // No need to free - arrays are managed internally by SCIP
+        return solutions;
+    }
+
+    // Read array of SCIP_SPARSESOL* pointers
+    IntPtr[] sparseSolPtrs = new IntPtr[nsols];
+    for (int i = 0; i < nsols; i++)
+    {
+        sparseSolPtrs[i] = Marshal.ReadIntPtr(sols, i * IntPtr.Size);
+    }
+
+    // Iterate each sparse solution and unroll into concrete solutions
+    for (int s = 0; s < nsols; s++)
+    {
+        IntPtr sparsesol = sparseSolPtrs[s];
+
+        // Get variable info for this sparse solution
+        IntPtr solVars = ScipNativeMethods.SCIPsparseSolGetVars(sparsesol);
+        int solNVars = ScipNativeMethods.SCIPsparseSolGetNVars(sparsesol);
+
+        if (solVars == IntPtr.Zero || solNVars == 0)
+            continue;
+
+        // Allocate buffer for concrete solution values (SCIP_Longint[] = int64[])
+        IntPtr concreteSolBuf = Marshal.AllocHGlobal(solNVars * sizeof(long));
+
+        try
+        {
+            // Get first concrete solution (void return in SCIP API)
+            ScipNativeMethods.SCIPsparseSolGetFirstSol(sparsesol, concreteSolBuf, solNVars);
+
+                // Iterate through all concrete solutions in this sparse solution
+                int concreteCount = 0;
+                do
+                {
+                    var solutionValues = new Dictionary<Variable, double>();
+
+                    for (int v = 0; v < solNVars; v++)
+                    {
+                        IntPtr varPtr = Marshal.ReadIntPtr(solVars, v * IntPtr.Size);
+                        long value = Marshal.ReadInt64(concreteSolBuf, v * sizeof(long));
+
+                        // Try to get variable by name (since pointers may not match after SCIP transformation)
+                        IntPtr varNamePtr = ScipNativeMethods.SCIPvarGetName(varPtr);
+                        string varName = Marshal.PtrToStringAnsi(varNamePtr) ?? "";
+
+                        // Try direct name match first
+                        if (_varNameToVarMap.TryGetValue(varName, out Variable? variable))
+                        {
+                            solutionValues[variable] = (double)value;
+                        }
+                        // If not found, try stripping common prefixes (like "t_")
+                        else if (varName.StartsWith("t_"))
+                        {
+                            string originalName = varName.Substring(2); // Remove "t_" prefix
+                            if (_varNameToVarMap.TryGetValue(originalName, out variable))
+                            {
+                                solutionValues[variable] = (double)value;
+                            }
+                        }
+                    }
+
+                    solutions.Add(solutionValues);
+                    concreteCount++;
+
+                } while (ScipNativeMethods.SCIPsparseSolGetNextSol(sparsesol, concreteSolBuf, solNVars));
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(concreteSolBuf);
+        }
+    }
+    // Note: No need to free sparse solutions arrays - they are managed internally by SCIP
+
+    return solutions;
 }
 
 /// <summary>

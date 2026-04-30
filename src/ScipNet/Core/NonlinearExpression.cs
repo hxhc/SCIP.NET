@@ -4,7 +4,26 @@ using ScipNet.Native;
 namespace ScipNet.Core;
 
 /// <summary>
-/// 代表非线性表达式（表达式树）
+/// Represents a nonlinear expression (expression tree)
+///
+/// Supported operations:
+/// - Arithmetic: +, -, *, /
+/// - Power: Pow(x, exponent)
+/// - Exponential: Exp(x)
+/// - Logarithm: Log(x) - natural logarithm
+/// - Square root: Sqrt(x) - equivalent to Pow(x, 0.5)
+/// - Absolute value: Abs(x)
+/// - Trigonometric: Sin(x), Cos(x) - input in radians
+///
+/// Usage:
+///   var x = model.AddVariable("x", 0, 10, VariableType.Continuous);
+///   var expr1 = NonlinearExpression.Sin(x);                    // sin(x)
+///   var expr2 = NonlinearExpression.Pow(x, 2.0);                // x^2
+///   var expr3 = NonlinearExpression.Exp(x) + NonlinearExpression.Log(x);  // e^x + ln(x)
+///
+/// Note: This is an abstract class - you cannot instantiate it directly.
+/// Use the static methods (Sin, Cos, Pow, etc.) or implicit conversions
+/// from Variable, double, or LinearExpression to create expressions.
 /// </summary>
 public abstract class NonlinearExpression
 {
@@ -68,6 +87,18 @@ public abstract class NonlinearExpression
     /// 幂运算 x^n
     /// </summary>
     public static NonlinearExpression Pow(NonlinearExpression baseExpr, double exponent) => new PowExpr(baseExpr, exponent);
+
+    /// <summary>
+    /// 正弦函数 sin(x)
+    /// Note: Input should be in radians
+    /// </summary>
+    public static NonlinearExpression Sin(NonlinearExpression arg) => new SinExpr(arg);
+
+    /// <summary>
+    /// 余弦函数 cos(x)
+    /// Note: Input should be in radians
+    /// </summary>
+    public static NonlinearExpression Cos(NonlinearExpression arg) => new CosExpr(arg);
 
     // ===== 约束创建 =====
 
@@ -427,5 +458,67 @@ public abstract class NonlinearExpression
         }
 
         public override string ToString() => $"abs({_child})";
+    }
+
+    /// <summary>
+    /// 正弦表达式节点
+    /// </summary>
+    private sealed class SinExpr : NonlinearExpression
+    {
+        private readonly NonlinearExpression _child;
+
+        public SinExpr(NonlinearExpression child)
+        {
+            _child = child;
+        }
+
+        internal override IntPtr BuildExpr(ScipHandle scip)
+        {
+            IntPtr childPtr = _child.BuildExpr(scip);
+            try
+            {
+                var ret = ScipNativeMethods.SCIPcreateExprSin(
+                    scip, out IntPtr expr, childPtr, IntPtr.Zero, IntPtr.Zero);
+                ErrorHandler.CheckReturnCode(ret, "Failed to create sin expression");
+                return expr;
+            }
+            finally
+            {
+                ScipNativeMethods.SCIPreleaseExpr(scip, ref childPtr);
+            }
+        }
+
+        public override string ToString() => $"sin({_child})";
+    }
+
+    /// <summary>
+    /// 余弦表达式节点
+    /// </summary>
+    private sealed class CosExpr : NonlinearExpression
+    {
+        private readonly NonlinearExpression _child;
+
+        public CosExpr(NonlinearExpression child)
+        {
+            _child = child;
+        }
+
+        internal override IntPtr BuildExpr(ScipHandle scip)
+        {
+            IntPtr childPtr = _child.BuildExpr(scip);
+            try
+            {
+                var ret = ScipNativeMethods.SCIPcreateExprCos(
+                    scip, out IntPtr expr, childPtr, IntPtr.Zero, IntPtr.Zero);
+                ErrorHandler.CheckReturnCode(ret, "Failed to create cos expression");
+                return expr;
+            }
+            finally
+            {
+                ScipNativeMethods.SCIPreleaseExpr(scip, ref childPtr);
+            }
+        }
+
+        public override string ToString() => $"cos({_child})";
     }
 }

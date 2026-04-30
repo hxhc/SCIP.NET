@@ -4,255 +4,189 @@ using ScipNet;
 using ScipNet.Core;
 
 /// <summary>
-/// Comprehensive Solution Pool Generator - Three Strategies for Collecting Many Feasible Solutions
+/// Solution Pool Example - Enumerate all feasible solutions using Count() + Sparse Solutions
 ///
-/// This example demonstrates three different strategies for collecting multiple
-/// feasible solutions from a combinatorial selection problem.
+/// Problem: Select K items from N items (C(N, K) combinations)
 ///
-/// Problem: Select K items from N items
-/// Solution space: C(N, K) combinations
+/// This example follows the official SCIP counting/sparse solution flow:
+/// 1. Create model and variables
+/// 2. Set Counter emphasis and enable solution collection
+/// 3. Call Count() to enumerate all feasible solutions
+/// 4. Call GetSparseSolutionsWithVariables() to retrieve concrete solution values
 ///
-/// Strategies demonstrated:
-/// 1. Basic Strategy: Counter mode + Gap + Node limit
-/// 2. Aggressive Strategy: Disable presolving + Enable heuristics
-/// 3. No Objective Strategy: Pure feasible solution collection
-///
-/// Each strategy has different trade-offs in terms of solution diversity,
-/// collection speed, and resource usage.
+/// Each "sparse solution" may contain multiple "concrete solutions".
+/// The unrolling is handled automatically by GetSparseSolutionsWithVariables().
 /// </summary>
 public class SolutionPoolExample
 {
     public static void Main()
     {
-        Console.WriteLine("=== Comprehensive Solution Pool Generator ===\n");
+        Console.WriteLine("=== Solution Pool Example: Enumerate All Feasible Solutions ===\n");
 
         int N = 10;
         int K = 5;
         int maxTime = 5;
 
         Console.WriteLine($"Problem: Select {K} items from {N} items");
-        Console.WriteLine($"Theoretical number of solutions: C({N}, {K}) = {Combination(N, K)}");
+        Console.WriteLine($"Theoretical solutions: C({N}, {K}) = {Combination(N, K)}");
         Console.WriteLine($"Time limit: {maxTime} seconds\n");
 
-        // ===== Run three different strategies =====
+        using var model = new Model("solution_pool");
 
-        Console.WriteLine("========================================");
-        Console.WriteLine("Strategy 1: Basic Mode (Counter + Gap)");
-        Console.WriteLine("========================================");
-        RunBasicStrategy(N, K, maxTime);
-
-        Console.WriteLine("\n========================================");
-        Console.WriteLine("Strategy 2: Aggressive Mode (Disable Presolving + Heuristics)");
-        Console.WriteLine("========================================");
-        RunAggressiveStrategy(N, K, maxTime);
-
-        Console.WriteLine("\n========================================");
-        Console.WriteLine("Strategy 3: No Objective Mode (Pure Feasible Solution Collection)");
-        Console.WriteLine("========================================");
-        RunNoObjectiveStrategy(N, K, maxTime);
-    }
-
-    /// <summary>
-    /// Strategy 1: Basic Mode
-    ///
-    /// Uses Counter mode + Large Gap + Node limit
-    ///
-    /// Problem formulation:
-    ///   Maximize: sum(x[i])
-    ///   Subject to: sum(x[i]) = K
-    ///   With: x[i] in {0, 1} for i = 0..N-1
-    ///
-    /// Key parameters:
-    /// - ParamEmphasis.Counter: Optimizes for counting solutions
-    /// - constraints/countsols/collect: Enable solution collection
-    /// - limits/time: Time limit for enumeration
-    ///
-    /// This is a balanced approach that works well for most cases.
-    /// </summary>
-    private static void RunBasicStrategy(int N, int K, int maxTime)
-    {
-        using var model = new Model("basic_pool");
-
-        // Create binary variables
+        // Step 1: Create binary variables
         var x = new Variable[N];
         for (int i = 0; i < N; i++)
             x[i] = model.AddVariable($"x{i}", 0, 1, VariableType.Binary);
 
-        // Constraint: must select exactly K items
+        // Step 2: Add constraint: sum(x[i]) == K (must select exactly K items)
         var sum = new LinearExpression();
         for (int i = 0; i < N; i++)
             sum = sum + x[i];
         model.AddConstraint(sum.Eq(K));
 
-        // Objective: maximize selected count (flat objective)
-        model.SetObjective(sum, ObjectiveSense.Maximize);
-
-        // ===== Strategy 1 Parameters =====
+        // Step 3: Configure for counting
+        // - Counter emphasis: optimized for enumeration
+        // - countsols/collect: store solutions for later retrieval
+        // - countsols/sollimit: max number of solutions to collect
+        // - presolving/maxrounds: disable presolving to avoid variable transformation issues
         model.SetEmphasis(ParamEmphasis.Counter, quiet: true);
         model.SetBoolParam("constraints/countsols/collect", true);
         model.SetLongParam("constraints/countsols/sollimit", 100000);
         model.SetRealParam("limits/time", maxTime);
         model.SetIntParam("display/verblevel", 0);
+        model.SetIntParam("presolving/maxrounds", 0); // Disable presolving to keep original variables
 
-        // Solve - Use Count() to enumerate all feasible solutions
-        Console.WriteLine("Starting to count feasible solutions...");
+        // Step 4: Count all feasible solutions
+        // Note: Count() internally calls SCIPincludeConshdlrCountsols() to
+        // register the countsols constraint handler, then SCIPsetParamsCountsols()
+        // and SCIPcount() to perform the enumeration.
+        Console.WriteLine("Counting feasible solutions...");
         var status = model.Count();
+        Console.WriteLine($"Solve status: {status} (Infeasible is expected after counting)");
 
-        // Display results
-        DisplayResults(model, x, "Basic Mode", status);
-    }
+        // Step 5: Get the total count
+        long totalCount = model.GetCountedSolutionsCount();
+        Console.WriteLine($"\nTotal counted solutions: {totalCount}");
+        Console.WriteLine($"Theoretical solutions:   {Combination(N, K)}");
+        if (totalCount > 0)
+            Console.WriteLine($"Coverage: {(double)totalCount / Combination(N, K) * 100:F2}%");
 
-    /// <summary>
-    /// Strategy 2: Aggressive Mode
-    ///
-    /// Disables presolving + Enables multiple heuristics + Disables pruning
-    ///
-    /// Problem formulation:
-    ///   Maximize: sum(x[i])
-    ///   Subject to: sum(x[i]) = K
-    ///   With: x[i] in {0, 1} for i = 0..N-1
-    ///
-    /// Key parameters:
-    /// - Same as Basic Mode (Counter emphasis, time limit)
-    /// - The difference is in how SCIP is configured internally
-    ///
-    /// This strategy may find more diverse solutions but might be slower.
-    /// </summary>
-    private static void RunAggressiveStrategy(int N, int K, int maxTime)
-    {
-        using var model = new Model("aggressive_pool");
+        // Step 6: Retrieve all sparse solutions and unroll into concrete solutions
+        // This calls SCIPgetCountedSparseSols() to get sparse solution structs,
+        // then SCIPsparseSolGetFirstSol/NextSol to iterate through each concrete solution.
+        Console.WriteLine("\nRetrieving concrete solutions from sparse solutions...");
+        var solutions = model.GetSparseSolutionsWithVariables();
+        Console.WriteLine($"Retrieved {solutions.Count} concrete solutions");
 
-        // Create binary variables
-        var x = new Variable[N];
-        for (int i = 0; i < N; i++)
-            x[i] = model.AddVariable($"x{i}", 0, 1, VariableType.Binary);
-
-        // Constraint: must select exactly K items
-        var sum = new LinearExpression();
-        for (int i = 0; i < N; i++)
-            sum = sum + x[i];
-        model.AddConstraint(sum.Eq(K));
-
-        // Objective: maximize selected count
-        model.SetObjective(sum, ObjectiveSense.Maximize);
-
-        // ===== Strategy 2 Parameters (Aggressive) =====
-        model.SetEmphasis(ParamEmphasis.Counter, quiet: true);
-        model.SetBoolParam("constraints/countsols/collect", true);
-        model.SetLongParam("constraints/countsols/sollimit", 100000);
-        model.SetRealParam("limits/time", maxTime);
-        model.SetIntParam("display/verblevel", 0);
-
-        // Solve - Use Count() to enumerate all feasible solutions
-        Console.WriteLine("Starting to count feasible solutions (aggressive strategy)...");
-        var status = model.Count();
-
-        // Display results
-        DisplayResults(model, x, "Aggressive Mode", status);
-    }
-
-    /// <summary>
-    /// Strategy 3: No Objective Mode
-    ///
-    /// Does not set an objective function, focuses on collecting all feasible solutions.
-    ///
-    /// Problem formulation:
-    ///   (No objective)
-    ///   Subject to: sum(x[i]) = K
-    ///   With: x[i] in {0, 1} for i = 0..N-1
-    ///
-    /// Key parameters:
-    /// - Same as Basic Mode (Counter emphasis, time limit)
-    /// - No objective function set
-    ///
-    /// This strategy is useful when you only care about finding feasible solutions,
-    /// not optimizing an objective. SCIP will explore the solution space more broadly.
-    /// </summary>
-    private static void RunNoObjectiveStrategy(int N, int K, int maxTime)
-    {
-        using var model = new Model("noobj_pool");
-
-        // Create binary variables
-        var x = new Variable[N];
-        for (int i = 0; i < N; i++)
-            x[i] = model.AddVariable($"x{i}", 0, 1, VariableType.Binary);
-
-        // Constraint: must select exactly K items
-        var sum = new LinearExpression();
-        for (int i = 0; i < N; i++)
-            sum = sum + x[i];
-        model.AddConstraint(sum.Eq(K));
-
-        // No objective function set! SCIP will find all feasible solutions
-
-        // ===== Strategy 3 Parameters (No Objective) =====
-        model.SetEmphasis(ParamEmphasis.Counter, quiet: true);
-        model.SetBoolParam("constraints/countsols/collect", true);
-        model.SetLongParam("constraints/countsols/sollimit", 100000);
-        model.SetRealParam("limits/time", maxTime);
-        model.SetIntParam("display/verblevel", 0);
-
-        // Solve - Use Count() to enumerate all feasible solutions
-        Console.WriteLine("Starting to count feasible solutions (no objective)...");
-        var status = model.Count();
-
-        // Display results
-        DisplayResults(model, x, "No Objective Mode", status);
-    }
-
-    /// <summary>
-    /// Display solve results
-    ///
-    /// After Count() execution, the status will be Infeasible, which is expected behavior.
-    /// This is because Count() enumerates solutions and then declares the problem
-    /// "infeasible" to signal that counting is complete.
-    /// </summary>
-    private static void DisplayResults(Model model, Variable[] x, string strategyName, SolveStatus status)
-    {
-        // After Count() execution, status will be Infeasible, which is expected
-        Console.WriteLine($"\n=== {strategyName} Results ===");
-        Console.WriteLine($"Solve status: {status} (Infeasible is expected)");
-
-        // Get the counted solution count
-        long count = model.GetCountedSolutionsCount();
-        Console.WriteLine($"Counted solutions: {count}");
-        Console.WriteLine($"Theoretical solutions: {Combination(x.Length, 5)}");
-        Console.WriteLine($"Coverage: {(double)count / Combination(x.Length, 5) * 100:F2}%");
-
-        if (count > 0)
+        if (solutions.Count == 0)
         {
-            // Try to get sparse solutions
-            try
-            {
-                var (vars, nvars, sols, nsols) = model.GetCountedSparseSolutions();
-                Console.WriteLine($"\nSparse solution information:");
-                Console.WriteLine($"  Active variables: {nvars}");
-                Console.WriteLine($"  Sparse solutions: {nsols}");
+            Console.WriteLine("No solutions retrieved.");
+            return;
+        }
 
-                // Free sparse solutions
-                model.FreeCountedSparseSolutions(ref sols);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"\n⚠️  Failed to get sparse solutions: {ex.Message}");
-            }
+        // Step 7: Display all solutions with better formatting
+        Console.WriteLine($"\n=== All {solutions.Count} Solutions ===");
+        Console.WriteLine($"Format: [Sol#] Selected Items (count)");
+        Console.WriteLine(new string('-', 60));
 
-            Console.WriteLine($"\n✅ Successfully collected {count} feasible solutions!");
+        for (int i = 0; i < solutions.Count; i++)
+        {
+            var sol = solutions[i];
+            var selected = sol
+                .Where(kvp => kvp.Value > 0.5)
+                .Select(kvp => kvp.Key.Name)
+                .OrderBy(n => n)
+                .ToList();
+
+            // Format: [001] x0, x1, x2, x3, x4 (5)
+            string solNum = (i + 1).ToString("D3"); // Zero-padded, 3 digits
+            string items = string.Join(", ", selected);
+            Console.WriteLine($"[{solNum}] {items} ({selected.Count})");
+
+            // Add extra line every 10 solutions for better readability
+            if ((i + 1) % 10 == 0 && i + 1 < solutions.Count)
+            {
+                Console.WriteLine();
+            }
+        }
+        Console.WriteLine(new string('-', 60));
+
+        // Step 8: Verify each solution
+        Console.WriteLine("\n=== Verification Results ===");
+
+        // Check each solution
+        int invalidCount = 0;
+        var invalidSolutions = new List<int>();
+
+        for (int i = 0; i < solutions.Count; i++)
+        {
+            int selectedCount = solutions[i].Count(kvp => kvp.Value > 0.5);
+            if (selectedCount != K)
+            {
+                invalidCount++;
+                invalidSolutions.Add(i + 1);
+            }
+        }
+
+        if (invalidCount == 0)
+        {
+            Console.WriteLine($"  ✅ All {solutions.Count} solutions are valid!");
+            Console.WriteLine($"  ✅ Each solution selects exactly {K} items as required");
         }
         else
         {
-            Console.WriteLine("⚠️  No solutions collected!");
+            Console.WriteLine($"  ⚠️  Found {invalidCount} invalid solutions:");
+            Console.WriteLine($"  ⚠️  Invalid solution numbers: {string.Join(", ", invalidSolutions)}");
+        }
+
+        // Step 9: Statistical analysis - variable selection frequency
+        Console.WriteLine("\n=== Variable Selection Frequency ===");
+        var frequency = new Dictionary<string, int>();
+        foreach (var sol in solutions)
+        {
+            foreach (var kvp in sol)
+            {
+                if (kvp.Value > 0.5)
+                {
+                    string varName = kvp.Key.Name;
+                    frequency.TryGetValue(varName, out int count);
+                    frequency[varName] = count + 1;
+                }
+            }
+        }
+
+        // Display frequency with visual bar
+        int maxFreq = frequency.Values.Max();
+        foreach (var varName in frequency.Keys.OrderBy(n => n))
+        {
+            int count = frequency[varName];
+            double pct = (double)count / solutions.Count * 100;
+            int barLength = (int)(pct / 2); // Scale to 50 chars max
+            string bar = new string('█', barLength);
+            Console.WriteLine($"  {varName}: {count}/{solutions.Count} ({pct:F1}%) {bar}");
+        }
+
+        // Step 10: Detailed Summary
+        Console.WriteLine("\n=== Summary ===");
+        Console.WriteLine($"  Problem:            Select {K} items from {N} items");
+        Console.WriteLine($"  Theoretical:        C({N},{K}) = {Combination(N, K)}");
+        Console.WriteLine($"  Counted:            {totalCount}");
+        Console.WriteLine($"  Retrieved:          {solutions.Count}");
+        Console.WriteLine($"  Coverage:           {(double)totalCount / Combination(N, K) * 100:F2}%");
+        Console.WriteLine($"  Valid Solutions:    {solutions.Count - invalidCount}/{solutions.Count}");
+
+        if (invalidCount == 0)
+        {
+            Console.WriteLine($"  Status:             ✅ SUCCESS - All solutions enumerated correctly!");
+        }
+        else
+        {
+            Console.WriteLine($"  Status:             ⚠️  WARNING - {invalidCount} invalid solutions found");
         }
     }
 
     /// <summary>
     /// Calculate combination number C(n, k)
-    ///
-    /// Uses the multiplicative formula to avoid overflow:
-    /// C(n, k) = n*(n-1)*...*(n-k+1) / k!
-    ///
-    /// Also uses the symmetry property: C(n, k) = C(n, n-k)
-    /// to minimize the number of multiplications.
     /// </summary>
     private static long Combination(int n, int k)
     {

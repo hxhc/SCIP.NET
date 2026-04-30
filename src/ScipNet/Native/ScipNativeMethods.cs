@@ -367,6 +367,28 @@ internal static class ScipNativeMethods
         IntPtr ownercreatedata);
 
     /// <summary>
+    /// 创建正弦表达式
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern ReturnCode SCIPcreateExprSin(
+        IntPtr scip,
+        out IntPtr expr,
+        IntPtr child,
+        IntPtr ownercreate,
+        IntPtr ownercreatedata);
+
+    /// <summary>
+    /// 创建余弦表达式
+    /// </summary>
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern ReturnCode SCIPcreateExprCos(
+        IntPtr scip,
+        out IntPtr expr,
+        IntPtr child,
+        IntPtr ownercreate,
+        IntPtr ownercreatedata);
+
+    /// <summary>
     /// 释放表达式
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -441,9 +463,11 @@ public static extern long SCIPgetNCountedSols(
 
 /// <summary>
 /// 获取收集的稀疏解（这些解是相对于 active variables 的）
+/// Note: Returns void in SCIP API, not ReturnCode
+/// The returned arrays are managed internally by SCIP and don't need to be freed by the caller
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-public static extern ReturnCode SCIPgetCountedSparseSols(
+public static extern void SCIPgetCountedSparseSols(
     IntPtr scip,
     out IntPtr vars,
     out int nvars,
@@ -451,12 +475,84 @@ public static extern ReturnCode SCIPgetCountedSparseSols(
     out int nsols);
 
 /// <summary>
-/// 释放计数的稀疏解
+/// 查找约束处理器
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+public static extern IntPtr SCIPfindConshdlr(
+    IntPtr scip,
+    [MarshalAs(UnmanagedType.LPStr)] string name);
+
+/// <summary>
+/// 获取变量名称
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+public static extern IntPtr SCIPvarGetName(
+    IntPtr var);
+
+/// <summary>
+/// 显式包含 countsols 约束处理器
+/// Note: This IS included by SCIPincludeDefaultPlugins() in SCIP 9.0+
+/// so we need to check if it's already included before calling this
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-public static extern void SCIPfreeCountedSparseSols(
+public static extern ReturnCode SCIPincludeConshdlrCountsols(
+    IntPtr scip);
+
+/// <summary>
+/// 获取稀疏解中的变量数组
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern IntPtr SCIPsparseSolGetVars(
+    IntPtr sparsesol);
+
+/// <summary>
+/// 获取稀疏解中的变量数量
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern int SCIPsparseSolGetNVars(
+    IntPtr sparsesol);
+
+/// <summary>
+/// 获取稀疏解中的第一个具体解
+/// Note: Returns void in SCIP API, not ReturnCode
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern void SCIPsparseSolGetFirstSol(
+    IntPtr sparsesol,
+    IntPtr sol,
+    int nvars);
+
+/// <summary>
+/// 获取稀疏解中的下一个具体解
+/// Returns true if a next solution was found, false if no more solutions
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+[return: MarshalAs(UnmanagedType.U1)]
+public static extern bool SCIPsparseSolGetNextSol(
+    IntPtr sparsesol,
+    IntPtr sol,
+    int nvars);
+
+/// <summary>
+/// 将原始变量转换为活动变量的表示（用于将稀疏解从活动变量空间转换到原始变量空间）
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern ReturnCode SCIPgetProbvarLinearSum(
     IntPtr scip,
-    ref IntPtr sols);
+    IntPtr var,
+    ref double scalar,
+    ref double constant,
+    out IntPtr vars,
+    out int nvars,
+    IntPtr scalars);
+
+/// <summary>
+/// 释放由SCIPgetProbvarLinearSum分配的内存
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern void SCIPfreeBufferArray(
+    IntPtr scip,
+    ref IntPtr ptr);
 
 // ===== Indicator 约束 =====
 
