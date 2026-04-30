@@ -6,6 +6,7 @@ namespace ScipNet.Core;
 /// <summary>
 /// Represents an Indicator constraint: when the binary variable is 1, the linear constraint must hold
 /// </summary>
+// 指示约束：当二进制变量为1时，线性约束必须成立
 public sealed class IndicatorConstraint : Constraint
 {
     private readonly Variable _binaryVar;
@@ -16,21 +17,25 @@ public sealed class IndicatorConstraint : Constraint
 /// <summary>
 /// Gets the binary indicator variable
 /// </summary>
+    // 获取二进制指示变量
     public Variable BinaryVariable => _binaryVar;
 
 /// <summary>
 /// Gets the linear expression
 /// </summary>
+    // 获取线性表达式
     public LinearExpression Expression => _expression;
 
 /// <summary>
 /// Gets the constraint sense
 /// </summary>
+    // 获取约束方向
     public Sense Sense => _sense;
 
 /// <summary>
 /// Gets the right-hand side value
 /// </summary>
+    // 获取右侧值
     public double RightHandSide => _rhs;
 
     public IndicatorConstraint(

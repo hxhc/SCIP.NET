@@ -25,21 +25,25 @@ namespace ScipNet.Core;
 /// Use the static methods (Sin, Cos, Pow, etc.) or implicit conversions
 /// from Variable, double, or LinearExpression to create expressions.
 /// </summary>
+// 表示非线性表达式（表达式树），支持算术、指数、对数、平方根、绝对值和三角函数运算
 public abstract class NonlinearExpression
 {
     /// <summary>
     /// Implicit conversion from variable to nonlinear expression
     /// </summary>
+    // 从变量到非线性表达式的隐式转换
     public static implicit operator NonlinearExpression(Variable var) => new VarExpr(var);
 
     /// <summary>
     /// Implicit conversion from double to nonlinear expression
     /// </summary>
+    // 从双精度浮点数到非线性表达式的隐式转换
     public static implicit operator NonlinearExpression(double value) => new ConstExpr(value);
 
     /// <summary>
     /// Implicit conversion from LinearExpression to nonlinear expression
     /// </summary>
+    // 从线性表达式到非线性表达式的隐式转换
     public static implicit operator NonlinearExpression(LinearExpression linear) => FromLinear(linear);
 
     // ===== Arithmetic Operators =====
@@ -66,45 +70,56 @@ public abstract class NonlinearExpression
     /// <summary>
     /// Exponential function exp(x)
     /// </summary>
+    // 指数函数 exp(x)
     public static NonlinearExpression Exp(NonlinearExpression arg) => new ExpExpr(arg);
 
     /// <summary>
     /// Natural logarithm log(x)
     /// </summary>
+    // 自然对数函数 log(x)
     public static NonlinearExpression Log(NonlinearExpression arg) => new LogExpr(arg);
 
     /// <summary>
     /// Square root sqrt(x)
     /// </summary>
+    // 平方根函数 sqrt(x)
     public static NonlinearExpression Sqrt(NonlinearExpression arg) => new PowExpr(arg, 0.5);
 
     /// <summary>
     /// Absolute value abs(x)
     /// </summary>
+    // 绝对值函数 abs(x)
     public static NonlinearExpression Abs(NonlinearExpression arg) => new AbsExpr(arg);
 
     /// <summary>
     /// Power function x^n
     /// </summary>
+    // 幂函数 x^n
     public static NonlinearExpression Pow(NonlinearExpression baseExpr, double exponent) => new PowExpr(baseExpr, exponent);
 
     /// <summary>
     /// Sine function sin(x)
     /// Note: Input should be in radians
     /// </summary>
+    // 正弦函数 sin(x)，输入为弧度
     public static NonlinearExpression Sin(NonlinearExpression arg) => new SinExpr(arg);
 
     /// <summary>
     /// Cosine function cos(x)
     /// Note: Input should be in radians
     /// </summary>
+    // 余弦函数 cos(x)，输入为弧度
     public static NonlinearExpression Cos(NonlinearExpression arg) => new CosExpr(arg);
 
     // ===== Constraint Creation =====
 
+    // 创建小于等于约束（表达式 ≤ rhs）
     public NonlinearConstraint Leq(double rhs) => new NonlinearConstraint(this, double.NegativeInfinity, rhs);
+    // 创建大于等于约束（表达式 ≥ rhs）
     public NonlinearConstraint Geq(double rhs) => new NonlinearConstraint(this, rhs, double.PositiveInfinity);
+    // 创建等于约束（表达式 = rhs）
     public NonlinearConstraint Eq(double rhs) => new NonlinearConstraint(this, rhs, rhs);
+    // 创建区间约束（lhs ≤ 表达式 ≤ rhs）
     public NonlinearConstraint Between(double lhs, double rhs) => new NonlinearConstraint(this, lhs, rhs);
 
     // ===== Build Native Expression =====

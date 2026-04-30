@@ -6,6 +6,7 @@ namespace ScipNet.Core;
 /// <summary>
 /// Constraint base class
 /// </summary>
+// 约束基类
 public abstract class Constraint
 {
     private readonly string _name;
@@ -14,11 +15,13 @@ public abstract class Constraint
 /// <summary>
 /// Gets the constraint name
 /// </summary>
+    // 获取约束名称
     public string Name => _name;
 
 /// <summary>
 /// Gets the associated model
 /// </summary>
+    // 获取关联的模型
     public Model Model
     {
         get
@@ -35,6 +38,7 @@ public abstract class Constraint
 /// <summary>
 /// Gets the constraint pointer
 /// </summary>
+    // 获取约束指针
     public IntPtr ConsPtr { get; private set; }
 
     protected void SetConsPtr(IntPtr consPtr)
@@ -45,6 +49,7 @@ public abstract class Constraint
 /// <summary>
 /// Internally sets the constraint pointer (used for constraints created directly by Model)
 /// </summary>
+    // 内部设置约束指针（用于Model直接创建的约束）
     internal void SetConsPtrInternal(IntPtr consPtr)
     {
         SetConsPtr(consPtr);
@@ -66,6 +71,7 @@ public abstract class Constraint
 /// <summary>
 /// Represents a linear constraint
 /// </summary>
+// 表示线性约束
 public sealed class LinearConstraint : Constraint
 {
     private readonly LinearExpression _expression;
@@ -75,16 +81,19 @@ public sealed class LinearConstraint : Constraint
     /// <summary>
     /// Gets the expression
     /// </summary>
+    // 获取表达式
     public LinearExpression Expression => _expression;
 
 /// <summary>
 /// Gets the constraint direction
 /// </summary>
+    // 获取约束方向
     public Sense Sense => _sense;
 
 /// <summary>
 /// Gets the right-hand side value
 /// </summary>
+    // 获取右侧值
     public double RightHandSide => _rhs;
 
     public LinearConstraint(
@@ -194,6 +203,7 @@ public sealed class LinearConstraint : Constraint
 /// <summary>
 /// Represents a range constraint
 /// </summary>
+// 表示范围约束
 public sealed class RangeConstraint : Constraint
 {
     private readonly LinearExpression _expression;
@@ -203,16 +213,19 @@ public sealed class RangeConstraint : Constraint
     /// <summary>
     /// Gets the expression
     /// </summary>
+    // 获取表达式
     public LinearExpression Expression => _expression;
 
 /// <summary>
 /// Gets the lower bound
 /// </summary>
+    // 获取下界
     public double LowerBound => _lb;
 
 /// <summary>
 /// Gets the upper bound
 /// </summary>
+    // 获取上界
     public double UpperBound => _ub;
 
     public RangeConstraint(

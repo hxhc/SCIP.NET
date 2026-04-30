@@ -6,6 +6,7 @@ namespace ScipNet.Core;
 /// <summary>
 /// Represents a linear expression
 /// </summary>
+// 表示一个线性表达式
 public sealed class LinearExpression
 {
     private readonly Dictionary<Variable, double> _coefficients;
@@ -14,11 +15,13 @@ public sealed class LinearExpression
     /// <summary>
     /// Gets the constant term
     /// </summary>
+    // 获取常数项
     public double Constant => _constant;
 
     /// <summary>
     /// Gets the coefficient dictionary
     /// </summary>
+    // 获取系数字典
     public IReadOnlyDictionary<Variable, double> Coefficients => _coefficients;
 
     public LinearExpression()
@@ -36,6 +39,7 @@ public sealed class LinearExpression
     /// <summary>
     /// Adds a term to the expression
     /// </summary>
+    // 向表达式添加项
     public LinearExpression AddTerm(Variable variable, double coefficient)
     {
         if (_coefficients.TryGetValue(variable, out double existing))
@@ -52,6 +56,7 @@ public sealed class LinearExpression
     /// <summary>
     /// Adds a constant term
     /// </summary>
+    // 添加常数项
     public LinearExpression AddConstant(double value)
     {
         _constant += value;
@@ -61,6 +66,7 @@ public sealed class LinearExpression
     /// <summary>
     /// Addition operator
     /// </summary>
+    // 加法运算符
     public static LinearExpression operator +(LinearExpression left, LinearExpression right)
     {
         var result = new Dictionary<Variable, double>();
@@ -118,6 +124,7 @@ public sealed class LinearExpression
     /// <summary>
     /// Subtraction operator
     /// </summary>
+    // 减法运算符
     public static LinearExpression operator -(LinearExpression left, LinearExpression right)
     {
         var result = new Dictionary<Variable, double>();
@@ -165,6 +172,7 @@ public sealed class LinearExpression
     /// <summary>
     /// Multiplication operator
     /// </summary>
+    // 乘法运算符
     public static LinearExpression operator *(LinearExpression expr, double scalar)
     {
         var result = new Dictionary<Variable, double>();
@@ -183,6 +191,7 @@ public sealed class LinearExpression
     /// <summary>
     /// Calculates the value of the expression
     /// </summary>
+    // 计算表达式的值
     public double Evaluate(Solution solution)
     {
         double value = _constant;
@@ -196,6 +205,7 @@ public sealed class LinearExpression
     /// <summary>
     /// Creates a less than or equal to constraint
     /// </summary>
+    // 创建小于等于约束
     public LinearConstraint Leq(double rhs)
     {
         return new LinearConstraint(this, Sense.LessThanOrEqual, rhs);
@@ -204,6 +214,7 @@ public sealed class LinearExpression
     /// <summary>
     /// Creates a greater than or equal to constraint
     /// </summary>
+    // 创建大于等于约束
     public LinearConstraint Geq(double rhs)
     {
         return new LinearConstraint(this, Sense.GreaterThanOrEqual, rhs);
@@ -212,6 +223,7 @@ public sealed class LinearExpression
     /// <summary>
     /// Creates an equal to constraint
     /// </summary>
+    // 创建等于约束
     public LinearConstraint Eq(double rhs)
     {
         return new LinearConstraint(this, Sense.Equal, rhs);
@@ -220,6 +232,7 @@ public sealed class LinearExpression
     /// <summary>
     /// Creates a range constraint
     /// </summary>
+    // 创建范围约束
     public RangeConstraint Between(double lb, double ub)
     {
         return new RangeConstraint(this, lb, ub);

@@ -5,16 +5,19 @@ namespace ScipNet.Native;
 /// <summary>
 /// SCIP exception base class
 /// </summary>
+// SCIP 异常基类
 public class ScipException : Exception
 {
     /// <summary>
     /// Associated return code
     /// </summary>
+    // 关联的返回码
     public ReturnCode ReturnCode { get; }
 
     /// <summary>
     /// Initializes a new instance
     /// </summary>
+    // 初始化新实例
     public ScipException(ReturnCode returnCode, string? message = null)
         : base(message ?? returnCode.ToString())
     {
@@ -24,6 +27,7 @@ public class ScipException : Exception
     /// <summary>
     /// Initializes a new instance (with inner exception)
     /// </summary>
+    // 初始化新实例（包含内部异常）
     public ScipException(ReturnCode returnCode, string message, Exception innerException)
         : base(message, innerException)
     {
@@ -34,6 +38,7 @@ public class ScipException : Exception
 /// <summary>
 /// Insufficient memory exception
 /// </summary>
+// 内存不足异常
 public sealed class ScipMemoryException : ScipException
 {
     public ScipMemoryException(string? message = null)
@@ -45,6 +50,7 @@ public sealed class ScipMemoryException : ScipException
 /// <summary>
 /// LP solver exception
 /// </summary>
+// LP 求解器异常
 public sealed class ScipLpException : ScipException
 {
     public ScipLpException(string? message = null)
@@ -56,6 +62,7 @@ public sealed class ScipLpException : ScipException
 /// <summary>
 /// Parameter exception
 /// </summary>
+// 参数异常
 public sealed class ScipParameterException : ScipException
 {
     public ScipParameterException(string parameterName, ReturnCode returnCode)
@@ -70,6 +77,7 @@ public sealed class ScipParameterException : ScipException
 /// <summary>
 /// Invalid call exception
 /// </summary>
+// 无效调用异常
 public sealed class ScipInvalidCallException : ScipException
 {
     public ScipInvalidCallException(string? message = null)
@@ -81,6 +89,7 @@ public sealed class ScipInvalidCallException : ScipException
 /// <summary>
 /// Infeasible exception
 /// </summary>
+// 不可行异常
 public sealed class ScipInfeasibleException : ScipException
 {
     public ScipInfeasibleException(string? message = null)
@@ -92,11 +101,13 @@ public sealed class ScipInfeasibleException : ScipException
 /// <summary>
 /// Error handling utility class
 /// </summary>
+// 错误处理工具类
 public static class ErrorHandler
 {
     /// <summary>
     /// Checks return code and throws exception on error
     /// </summary>
+    // 检查返回码，错误时抛出异常
     public static void CheckReturnCode(ReturnCode returnCode, string? context = null)
     {
         if (returnCode == ReturnCode.Okay)
@@ -121,6 +132,7 @@ public static class ErrorHandler
     /// <summary>
     /// Checks return code and returns whether successful
     /// </summary>
+    // 检查返回码，返回是否成功
     public static bool TryCheckReturnCode(ReturnCode returnCode)
     {
         return returnCode == ReturnCode.Okay;

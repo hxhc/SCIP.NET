@@ -7,6 +7,7 @@ namespace ScipNet.Core;
 /// <summary>
 /// Represents a SCIP optimization problem model
 /// </summary>
+// SCIP 优化问题模型
 public sealed class Model : IDisposable
 {
     private readonly ScipHandle _scipHandle;
@@ -20,21 +21,25 @@ public sealed class Model : IDisposable
     /// <summary>
     /// Gets the model name
     /// </summary>
+    // 获取模型名称
     public string Name { get; private set; }
 
     /// <summary>
     /// Gets the objective sense
     /// </summary>
+    // 获取目标函数方向（最小化/最大化）
     public ObjectiveSense ObjectiveSense { get; private set; }
 
     /// <summary>
     /// Gets all variables
     /// </summary>
+    // 获取所有变量
     public IReadOnlyCollection<Variable> Variables => _variables.Values;
 
     /// <summary>
     /// Gets all constraints
     /// </summary>
+    // 获取所有约束
     public IReadOnlyCollection<Constraint> Constraints => _constraints.Values;
 
     /// <summary>
@@ -42,6 +47,7 @@ public sealed class Model : IDisposable
     /// </summary>
     /// <param name="name">Model name</param>
     /// <param name="includeDefaultPlugins">Whether to include default plugins</param>
+    // 创建新的 SCIP 模型
     public Model(string name = "model", bool includeDefaultPlugins = true)
     {
         ReturnCode ret = ScipNativeMethods.SCIPcreate(out IntPtr scipPtr);
@@ -66,6 +72,7 @@ public sealed class Model : IDisposable
     /// <summary>
     /// Adds a variable to the model
     /// </summary>
+    // 向模型添加变量
     public Variable AddVariable(
         string name,
         double lowerBound,
@@ -95,6 +102,7 @@ public sealed class Model : IDisposable
     /// <summary>
     /// Adds a constraint to the model
     /// </summary>
+    // 向模型添加约束
     public T AddConstraint<T>(T constraint) where T : Constraint
     {
         // Set constraint model reference
@@ -108,6 +116,7 @@ public sealed class Model : IDisposable
     /// <summary>
     /// Sets the objective sense
     /// </summary>
+    // 设置目标函数方向
     public void SetObjectiveSense(ObjectiveSense sense)
     {
         ObjectiveSense = sense;
@@ -128,6 +137,7 @@ public sealed class Model : IDisposable
     ///
     /// Nonlinear objective functions still use epigraph transformation, as SCIP requires it.
     /// </remarks>
+    // 设置线性目标函数
     public void SetObjective(LinearExpression expression, ObjectiveSense sense)
     {
         // Store the linear objective for later evaluation
@@ -177,6 +187,7 @@ public sealed class Model : IDisposable
     /// }
     /// </code>
     /// </remarks>
+    // 计算给定解的目标函数值
     public double EvaluateObjective(Dictionary<Variable, double> solution)
     {
         // First check if __objvar__ exists (for nonlinear objectives)
@@ -208,6 +219,7 @@ public sealed class Model : IDisposable
     /// </summary>
     /// <param name="expression">Nonlinear objective function expression</param>
     /// <param name="sense">Objective sense</param>
+    // 设置非线性目标函数（自动通过 epigraph 重构）
     public void SetObjective(NonlinearExpression expression, ObjectiveSense sense)
     {
         // Set objective sense
@@ -272,10 +284,11 @@ public sealed class Model : IDisposable
         }
     }
 
-    /// <summary>
-    /// Optimizes the model
-    /// </summary>
-    public SolveStatus Optimize()
+/// <summary>
+/// Optimizes the model
+/// </summary>
+// 优化模型
+public SolveStatus Optimize()
 {
     ReturnCode ret = ScipNativeMethods.SCIPsolve(_scipHandle);
     ErrorHandler.CheckReturnCode(ret, "Failed to solve");
@@ -295,6 +308,7 @@ public sealed class Model : IDisposable
 ///   model.SetBoolParam("constraints/countsols/collect", true);
 ///   model.SetLongParam("constraints/countsols/sollimit", 100000);
 /// </summary>
+// 枚举所有可行解（而非仅求解最优解）
 public SolveStatus Count()
 {
     // Include the countsols constraint handler if not already included
@@ -321,6 +335,7 @@ public SolveStatus Count()
 /// <summary>
 /// Gets the number of counted solutions
 /// </summary>
+// 获取已计数解的数量
 public long GetCountedSolutionsCount()
 {
     IntPtr valid;
@@ -332,6 +347,7 @@ public long GetCountedSolutionsCount()
 /// Get raw counted sparse solutions (relative to active variables)
 /// Note: SCIPgetCountedSparseSols returns void, so no error code to check
 /// </summary>
+// 获取原始计数稀疏解（相对于活跃变量）
 public (IntPtr vars, int nvars, IntPtr sols, int nsols) GetCountedSparseSolutions()
 {
     ScipNativeMethods.SCIPgetCountedSparseSols(
@@ -348,6 +364,7 @@ public (IntPtr vars, int nvars, IntPtr sols, int nsols) GetCountedSparseSolution
 /// Check if sparse solutions are available after calling Count()
 /// Note: No need to free the returned arrays - they are managed internally by SCIP
 /// </summary>
+// 检查调用 Count() 后是否有稀疏解可用
 public bool AreSparseSolutionsAvailable()
 {
     try
@@ -374,6 +391,7 @@ public bool AreSparseSolutionsAvailable()
 ///
 /// MUST be called after Count() with constraints/countsols/collect = true.
 /// </summary>
+// 获取所有稀疏解并展开为包含变量值的具体解
 public List<Dictionary<Variable, double>> GetSparseSolutionsWithVariables()
 {
     var solutions = new List<Dictionary<Variable, double>>();
@@ -463,6 +481,7 @@ public List<Dictionary<Variable, double>> GetSparseSolutionsWithVariables()
 /// <summary>
 /// Gets the best (optimal) solution
 /// </summary>
+// 获取最优解
     public Solution? GetBestSolution()
     {
         IntPtr solPtr = ScipNativeMethods.SCIPgetBestSol(_scipHandle);
@@ -477,6 +496,7 @@ public List<Dictionary<Variable, double>> GetSparseSolutionsWithVariables()
     /// <summary>
     /// Gets all solutions from the solution pool
     /// </summary>
+    // 获取解池中的所有解
     public IReadOnlyList<Solution> GetSolutions()
     {
         int nsols = ScipNativeMethods.SCIPgetNSols(_scipHandle);
@@ -505,11 +525,13 @@ public List<Dictionary<Variable, double>> GetSparseSolutionsWithVariables()
     /// <summary>
     /// Gets the number of solutions in the solution pool
     /// </summary>
+    // 获取解池中的解的数量
     public int SolutionCount => ScipNativeMethods.SCIPgetNSols(_scipHandle);
 
     /// <summary>
     /// Sets a boolean parameter
     /// </summary>
+    // 设置布尔参数
     public void SetBoolParam(string name, bool value)
     {
         ReturnCode ret = ScipNativeMethods.SCIPsetBoolParam(_scipHandle, name, value);
@@ -519,6 +541,7 @@ public List<Dictionary<Variable, double>> GetSparseSolutionsWithVariables()
 /// <summary>
 /// Sets an integer parameter
 /// </summary>
+// 设置整数参数
 public void SetIntParam(string name, int value)
 {
     ReturnCode ret = ScipNativeMethods.SCIPsetIntParam(_scipHandle, name, value);
@@ -528,6 +551,7 @@ public void SetIntParam(string name, int value)
 /// <summary>
 /// Sets a long integer parameter
 /// </summary>
+// 设置长整数参数
 public void SetLongParam(string name, long value)
 {
     ReturnCode ret = ScipNativeMethods.SCIPsetLongintParam(_scipHandle, name, value);
@@ -537,6 +561,7 @@ public void SetLongParam(string name, long value)
 /// <summary>
 /// Sets a real (floating-point) parameter
 /// </summary>
+// 设置实数（浮点）参数
     public void SetRealParam(string name, double value)
     {
         ReturnCode ret = ScipNativeMethods.SCIPsetRealParam(_scipHandle, name, value);
@@ -546,6 +571,7 @@ public void SetLongParam(string name, long value)
     /// <summary>
     /// Sets a string parameter
     /// </summary>
+    // 设置字符串参数
     public void SetStringParam(string name, string value)
     {
         ReturnCode ret = ScipNativeMethods.SCIPsetStringParam(_scipHandle, name, value);
@@ -555,6 +581,7 @@ public void SetLongParam(string name, long value)
     /// <summary>
     /// Gets statistics information
     /// </summary>
+    // 获取统计信息
     public Statistics GetStatistics()
     {
         return new Statistics(this);
@@ -563,6 +590,7 @@ public void SetLongParam(string name, long value)
     /// <summary>
     /// Gets an integer parameter value
     /// </summary>
+    // 获取整数参数值
     public int GetIntParam(string name)
     {
         ReturnCode ret = ScipNativeMethods.SCIPgetIntParam(_scipHandle, name, out int value);
@@ -573,6 +601,7 @@ public void SetLongParam(string name, long value)
     /// <summary>
     /// Gets a real (floating-point) parameter value
     /// </summary>
+    // 获取实数（浮点）参数值
     public double GetRealParam(string name)
     {
         ReturnCode ret = ScipNativeMethods.SCIPgetRealParam(_scipHandle, name, out double value);
@@ -583,6 +612,7 @@ public void SetLongParam(string name, long value)
     /// <summary>
     /// Gets a boolean parameter value
     /// </summary>
+    // 获取布尔参数值
     public bool GetBoolParam(string name)
     {
         ReturnCode ret = ScipNativeMethods.SCIPgetBoolParam(_scipHandle, name, out bool value);
@@ -593,6 +623,7 @@ public void SetLongParam(string name, long value)
 /// <summary>
 /// Gets a string parameter value
 /// </summary>
+// 获取字符串参数值
 public string? GetStringParam(string name)
 {
     ReturnCode ret = ScipNativeMethods.SCIPgetStringParam(_scipHandle, name, out IntPtr value);
@@ -608,6 +639,7 @@ public string? GetStringParam(string name)
 /// Sets parameter emphasis mode
 /// <param name="paramEmphasis">Parameter emphasis mode</param>
 /// <param name="quiet">Whether to set quietly (no output)</param>
+// 设置参数强调模式
 public void SetEmphasis(ParamEmphasis paramEmphasis, bool quiet = false)
 {
     ReturnCode ret = ScipNativeMethods.SCIPsetEmphasis(_scipHandle, paramEmphasis, quiet);
@@ -617,6 +649,7 @@ public void SetEmphasis(ParamEmphasis paramEmphasis, bool quiet = false)
 /// <summary>
 /// Releases resources
 /// </summary>
+// 释放资源
     public void Dispose()
     {
         if (!_disposed)

@@ -5,6 +5,7 @@ namespace ScipNet.Core;
     /// <summary>
     /// Represents a nonlinear constraint
     /// </summary>
+    // 表示一个非线性约束
 public sealed class NonlinearConstraint : Constraint
 {
     private readonly NonlinearExpression _expression;
@@ -14,16 +15,19 @@ public sealed class NonlinearConstraint : Constraint
     /// <summary>
     /// Gets the expression
     /// </summary>
+    // 获取表达式
     public NonlinearExpression Expression => _expression;
 
     /// <summary>
     /// Gets the lower bound
     /// </summary>
+    // 获取下界
     public double LowerBound => _lhs;
 
     /// <summary>
     /// Gets the upper bound
     /// </summary>
+    // 获取上界
     public double UpperBound => _rhs;
 
     public NonlinearConstraint(
