@@ -4,7 +4,7 @@ using ScipNet.Native;
 namespace ScipNet.Core;
 
 /// <summary>
-/// 代表 Indicator 约束：当二元变量为 1 时，线性约束必须成立
+/// Represents an Indicator constraint: when the binary variable is 1, the linear constraint must hold
 /// </summary>
 public sealed class IndicatorConstraint : Constraint
 {
@@ -13,24 +13,24 @@ public sealed class IndicatorConstraint : Constraint
     private readonly Sense _sense;
     private readonly double _rhs;
 
-    /// <summary>
-    /// 获取二元指示变量
-    /// </summary>
+/// <summary>
+/// Gets the binary indicator variable
+/// </summary>
     public Variable BinaryVariable => _binaryVar;
 
-    /// <summary>
-    /// 获取线性表达式
-    /// </summary>
+/// <summary>
+/// Gets the linear expression
+/// </summary>
     public LinearExpression Expression => _expression;
 
-    /// <summary>
-    /// 获取约束方向
-    /// </summary>
+/// <summary>
+/// Gets the constraint sense
+/// </summary>
     public Sense Sense => _sense;
 
-    /// <summary>
-    /// 获取右侧值
-    /// </summary>
+/// <summary>
+/// Gets the right-hand side value
+/// </summary>
     public double RightHandSide => _rhs;
 
     public IndicatorConstraint(
@@ -62,10 +62,10 @@ public sealed class IndicatorConstraint : Constraint
             throw new InvalidOperationException("Indicator constraint expression must have at least one variable");
         }
 
-        // SCIPcreateConsBasicIndicator 只支持 sum(vals*vars) <= rhs 形式
-        // 对于 >= 和 == 需要转换：
+        // SCIPcreateConsBasicIndicator only supports the form sum(vals*vars) <= rhs
+        // For >= and ==, conversion is needed:
         //   a^T x >= b  →  -a^T x <= -b
-        //   a^T x == b  →  a^T x <= b AND -a^T x <= -b（拆为两个 indicator 约束）
+        //   a^T x == b  →  a^T x <= b AND -a^T x <= -b (split into two indicator constraints)
 
         bool negate = _sense == Sense.GreaterThanOrEqual;
         double rhs = negate ? -_rhs : _rhs;
@@ -105,7 +105,7 @@ public sealed class IndicatorConstraint : Constraint
 
             SetConsPtr(consPtr);
 
-            // 对于 == 约束，需要添加第二个 indicator 约束：a^T x >= rhs
+            // For == constraints, need to add a second indicator constraint: a^T x >= rhs
             if (_sense == Sense.Equal)
             {
                 IntPtr varsPtr2 = Marshal.AllocHGlobal(nvars * IntPtr.Size);
@@ -138,11 +138,11 @@ public sealed class IndicatorConstraint : Constraint
                     ret = ScipNativeMethods.SCIPaddCons(Model.ScipHandle, consPtr2);
                     ErrorHandler.CheckReturnCode(ret, $"Failed to add second indicator constraint {secondName}");
 
-                    // 释放第二个约束（由 Model 管理，但这里不需要跟踪）
+                    // Release the second constraint (managed by Model, but no need to track here)
                     ret = ScipNativeMethods.SCIPreleaseCons(Model.ScipHandle, ref consPtr2);
                     if (ret != ReturnCode.Okay)
                     {
-                        // 释放失败不影响功能
+                        // Release failure does not affect functionality
                     }
                 }
                 finally

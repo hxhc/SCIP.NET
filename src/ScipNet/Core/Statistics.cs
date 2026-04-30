@@ -3,50 +3,50 @@ using ScipNet.Native;
 namespace ScipNet.Core;
 
 /// <summary>
-/// 代表求解统计信息
+/// Represents solving statistics
 /// </summary>
 public sealed class Statistics
 {
     private readonly Model _model;
 
-    /// <summary>
-    /// 获取求解时间（秒）
-    /// </summary>
+/// <summary>
+/// Gets solving time (in seconds)
+/// </summary>
     public double SolvingTime => ScipNativeMethods.SCIPgetSolvingTime(_model.ScipHandle);
 
-    /// <summary>
-    /// 获取总节点数
-    /// </summary>
+/// <summary>
+/// Gets total number of nodes
+/// </summary>
     public long TotalNodes => ScipNativeMethods.SCIPgetNNodes(_model.ScipHandle);
 
-    /// <summary>
-    /// 获取开放节点数（剩余节点数）
-    /// </summary>
+/// <summary>
+/// Gets number of open nodes (remaining nodes)
+/// </summary>
     public int OpenNodes => ScipNativeMethods.SCIPgetNNodesLeft(_model.ScipHandle);
 
-    /// <summary>
-    /// 获取原始界
-    /// </summary>
+/// <summary>
+/// Gets primal bound
+/// </summary>
     public double PrimalBound => ScipNativeMethods.SCIPgetPrimalbound(_model.ScipHandle);
 
-    /// <summary>
-    /// 获取对偶界
-    /// </summary>
+/// <summary>
+/// Gets dual bound
+/// </summary>
     public double DualBound => ScipNativeMethods.SCIPgetDualbound(_model.ScipHandle);
 
-    /// <summary>
-    /// 获取间隙
-    /// </summary>
+/// <summary>
+/// Gets gap
+/// </summary>
     public double Gap => ScipNativeMethods.SCIPgetGap(_model.ScipHandle);
 
-    /// <summary>
-    /// 获取 LP 迭代次数
-    /// </summary>
+/// <summary>
+/// Gets number of LP iterations
+/// </summary>
     public long NLpIterations => ScipNativeMethods.SCIPgetNLPIterations(_model.ScipHandle);
 
-    /// <summary>
-    /// 获取找到的解数量
-    /// </summary>
+/// <summary>
+/// Gets number of solutions found
+/// </summary>
     public int NSolutionsFound => ScipNativeMethods.SCIPgetNSols(_model.ScipHandle);
 
     internal Statistics(Model model)
@@ -54,9 +54,9 @@ public sealed class Statistics
         _model = model;
     }
 
-    /// <summary>
-    /// 获取统计摘要
-    /// </summary>
+/// <summary>
+/// Gets statistics summary
+/// </summary>
     public override string ToString()
     {
         return $"SolvingTime: {SolvingTime:F2}s, " +

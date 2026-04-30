@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace ScipNet.Core;
 
 /// <summary>
-/// 代表线性表达式
+/// Represents a linear expression
 /// </summary>
 public sealed class LinearExpression
 {
@@ -12,12 +12,12 @@ public sealed class LinearExpression
     private double _constant;
 
     /// <summary>
-    /// 获取常数项
+    /// Gets the constant term
     /// </summary>
     public double Constant => _constant;
 
     /// <summary>
-    /// 获取系数字典
+    /// Gets the coefficient dictionary
     /// </summary>
     public IReadOnlyDictionary<Variable, double> Coefficients => _coefficients;
 
@@ -34,7 +34,7 @@ public sealed class LinearExpression
     }
 
     /// <summary>
-    /// 添加项到表达式
+    /// Adds a term to the expression
     /// </summary>
     public LinearExpression AddTerm(Variable variable, double coefficient)
     {
@@ -50,7 +50,7 @@ public sealed class LinearExpression
     }
 
     /// <summary>
-    /// 添加常数项
+    /// Adds a constant term
     /// </summary>
     public LinearExpression AddConstant(double value)
     {
@@ -59,7 +59,7 @@ public sealed class LinearExpression
     }
 
     /// <summary>
-    /// 加法运算符
+    /// Addition operator
     /// </summary>
     public static LinearExpression operator +(LinearExpression left, LinearExpression right)
     {
@@ -116,7 +116,7 @@ public sealed class LinearExpression
     }
 
     /// <summary>
-    /// 减法运算符
+    /// Subtraction operator
     /// </summary>
     public static LinearExpression operator -(LinearExpression left, LinearExpression right)
     {
@@ -163,7 +163,7 @@ public sealed class LinearExpression
     }
 
     /// <summary>
-    /// 乘法运算符
+    /// Multiplication operator
     /// </summary>
     public static LinearExpression operator *(LinearExpression expr, double scalar)
     {
@@ -181,7 +181,7 @@ public sealed class LinearExpression
     }
 
     /// <summary>
-    /// 计算表达式的值
+    /// Calculates the value of the expression
     /// </summary>
     public double Evaluate(Solution solution)
     {
@@ -194,7 +194,7 @@ public sealed class LinearExpression
     }
 
     /// <summary>
-    /// 创建小于等于约束
+    /// Creates a less than or equal to constraint
     /// </summary>
     public LinearConstraint Leq(double rhs)
     {
@@ -202,7 +202,7 @@ public sealed class LinearExpression
     }
 
     /// <summary>
-    /// 创建大于等于约束
+    /// Creates a greater than or equal to constraint
     /// </summary>
     public LinearConstraint Geq(double rhs)
     {
@@ -210,7 +210,7 @@ public sealed class LinearExpression
     }
 
     /// <summary>
-    /// 创建等于约束
+    /// Creates an equal to constraint
     /// </summary>
     public LinearConstraint Eq(double rhs)
     {
@@ -218,7 +218,7 @@ public sealed class LinearExpression
     }
 
     /// <summary>
-    /// 创建范围约束
+    /// Creates a range constraint
     /// </summary>
     public RangeConstraint Between(double lb, double ub)
     {

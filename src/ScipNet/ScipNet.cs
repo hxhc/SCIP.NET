@@ -13,12 +13,12 @@ namespace ScipNet;
 public static class ScipNet
 {
     /// <summary>
-    /// 获取 SCIP.NET 版本
+    /// Get SCIP.NET version
     /// </summary>
     public static string Version => "0.1.0";
 
     /// <summary>
-    /// 获取 SCIP 版本
+    /// Get SCIP version
     /// </summary>
     public static string ScipVersion => "9.0.0";
 }

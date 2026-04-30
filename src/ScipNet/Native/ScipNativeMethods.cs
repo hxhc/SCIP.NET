@@ -4,28 +4,28 @@ using ScipNet.Core;
 namespace ScipNet.Native;
 
 /// <summary>
-/// SCIP Native 方法声明
+/// SCIP Native method declarations
 /// </summary>
 internal static class ScipNativeMethods
 {
     private const string DllName = "libscip";
 
     /// <summary>
-    /// 创建 SCIP 实例
+    /// Creates a SCIP instance
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPcreate(
         out IntPtr scip);
 
     /// <summary>
-    /// 释放 SCIP 实例
+    /// Releases a SCIP instance
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPfree(
         ref IntPtr scip);
 
     /// <summary>
-    /// 创建问题
+    /// Creates a problem
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public static extern ReturnCode SCIPcreateProbBasic(
@@ -33,28 +33,28 @@ internal static class ScipNativeMethods
         [MarshalAs(UnmanagedType.LPStr)] string name);
 
     /// <summary>
-    /// 包含默认插件
+    /// Includes default plugins
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPincludeDefaultPlugins(
         IntPtr scip);
 
     /// <summary>
-    /// 求解
+    /// Solves the problem
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPsolve(
         IntPtr scip);
 
     /// <summary>
-    /// 获取求解状态
+    /// Gets the solution status
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern SolveStatus SCIPgetStatus(
         IntPtr scip);
 
     /// <summary>
-    /// 创建变量
+    /// Creates a variable
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public static extern ReturnCode SCIPcreateVarBasic(
@@ -67,7 +67,7 @@ internal static class ScipNativeMethods
         VariableType vartype);
 
     /// <summary>
-    /// 添加变量到问题
+    /// Adds a variable to the problem
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPaddVar(
@@ -75,7 +75,7 @@ internal static class ScipNativeMethods
         IntPtr var);
 
     /// <summary>
-    /// 创建线性约束
+    /// Creates a linear constraint
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public static extern ReturnCode SCIPcreateConsBasicLinear(
@@ -89,7 +89,7 @@ internal static class ScipNativeMethods
         double rhs);
 
     /// <summary>
-    /// 添加系数到线性约束
+    /// Adds a coefficient to a linear constraint
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPaddCoefLinear(
@@ -99,7 +99,7 @@ internal static class ScipNativeMethods
         double val);
 
     /// <summary>
-    /// 添加约束到问题
+    /// Adds a constraint to the problem
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPaddCons(
@@ -107,7 +107,7 @@ internal static class ScipNativeMethods
         IntPtr cons);
 
     /// <summary>
-    /// 设置目标函数方向
+    /// Sets the objective function sense
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPsetObjsense(
@@ -115,7 +115,7 @@ internal static class ScipNativeMethods
         ObjectiveSense objsense);
 
     /// <summary>
-    /// 更改变量的目标函数系数
+    /// Changes the objective coefficient of a variable
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPchgVarObj(
@@ -124,7 +124,7 @@ internal static class ScipNativeMethods
         double newobj);
 
     /// <summary>
-    /// 获取变量在解中的值
+    /// Gets the value of a variable in a solution
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern double SCIPgetSolVal(
@@ -133,70 +133,70 @@ internal static class ScipNativeMethods
         IntPtr var);
 
     /// <summary>
-    /// 获取最佳解
+    /// Gets the best solution
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern IntPtr SCIPgetBestSol(
         IntPtr scip);
 
     /// <summary>
-    /// 获取原始界
+    /// Gets the primal bound
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern double SCIPgetPrimalbound(
         IntPtr scip);
 
     /// <summary>
-    /// 获取对偶界
+    /// Gets the dual bound
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern double SCIPgetDualbound(
         IntPtr scip);
 
     /// <summary>
-    /// 获取间隙
+    /// Gets the gap
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern double SCIPgetGap(
         IntPtr scip);
 
     /// <summary>
-    /// 获取总节点数
+    /// Gets the total number of nodes
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "SCIPgetNNodes")]
     public static extern long SCIPgetNNodes(
         IntPtr scip);
 
     /// <summary>
-    /// 获取剩余节点数（开放节点数）
+    /// Gets the number of remaining nodes (open nodes)
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "SCIPgetNNodesLeft")]
     public static extern int SCIPgetNNodesLeft(
         IntPtr scip);
 
     /// <summary>
-    /// 获取求解时间
+    /// Gets the solving time
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern double SCIPgetSolvingTime(
         IntPtr scip);
 
     /// <summary>
-    /// 获取 LP 迭代次数
+    /// Gets the number of LP iterations
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern long SCIPgetNLPIterations(
         IntPtr scip);
 
     /// <summary>
-    /// 获取找到的解数量
+    /// Gets the number of solutions found
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern int SCIPgetNSols(
         IntPtr scip);
 
     /// <summary>
-    /// 释放变量
+    /// Releases a variable
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPreleaseVar(
@@ -204,7 +204,7 @@ internal static class ScipNativeMethods
         ref IntPtr var);
 
     /// <summary>
-    /// 释放约束
+    /// Releases a constraint
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPreleaseCons(
@@ -212,7 +212,7 @@ internal static class ScipNativeMethods
         ref IntPtr cons);
 
     /// <summary>
-    /// 设置布尔参数
+    /// Sets a boolean parameter
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public static extern ReturnCode SCIPsetBoolParam(
@@ -221,7 +221,7 @@ internal static class ScipNativeMethods
         [MarshalAs(UnmanagedType.I1)] bool value);
 
     /// <summary>
-    /// 设置整数参数
+    /// Sets an integer parameter
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public static extern ReturnCode SCIPsetIntParam(
@@ -230,7 +230,7 @@ internal static class ScipNativeMethods
         int value);
 
     /// <summary>
-    /// 设置实数参数
+    /// Sets a real parameter
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public static extern ReturnCode SCIPsetRealParam(
@@ -239,7 +239,7 @@ internal static class ScipNativeMethods
         double value);
 
     /// <summary>
-    /// 设置字符串参数
+    /// Sets a string parameter
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public static extern ReturnCode SCIPsetStringParam(
@@ -248,14 +248,14 @@ internal static class ScipNativeMethods
         [MarshalAs(UnmanagedType.LPStr)] string value);
 
     /// <summary>
-    /// 获取参数数量
+    /// Gets the number of parameters
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern int SCIPgetNParams(
         IntPtr scip);
 
     /// <summary>
-    /// 获取参数名称
+    /// Gets a parameter name
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public static extern IntPtr SCIPgetParamName(
@@ -263,17 +263,17 @@ internal static class ScipNativeMethods
         int idx);
 
     /// <summary>
-    /// 获取参数类型
+    /// Gets a parameter type
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public static extern int SCIPgetParamType(
         IntPtr scip,
         [MarshalAs(UnmanagedType.LPStr)] string name);
 
-    // ===== 非线性表达式创建 =====
+    // ===== Nonlinear Expression Creation =====
 
     /// <summary>
-    /// 创建变量表达式
+    /// Creates a variable expression
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPcreateExprVar(
@@ -284,7 +284,7 @@ internal static class ScipNativeMethods
         IntPtr ownercreatedata);
 
     /// <summary>
-    /// 创建常量值表达式
+    /// Creates a constant value expression
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPcreateExprValue(
@@ -295,7 +295,7 @@ internal static class ScipNativeMethods
         IntPtr ownercreatedata);
 
     /// <summary>
-    /// 创建求和表达式
+    /// Creates a sum expression
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPcreateExprSum(
@@ -309,7 +309,7 @@ internal static class ScipNativeMethods
         IntPtr ownercreatedata);
 
     /// <summary>
-    /// 创建乘积表达式
+    /// Creates a product expression
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPcreateExprProduct(
@@ -322,7 +322,7 @@ internal static class ScipNativeMethods
         IntPtr ownercreatedata);
 
     /// <summary>
-    /// 创建幂运算表达式
+    /// Creates a power expression
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPcreateExprPow(
@@ -334,7 +334,7 @@ internal static class ScipNativeMethods
         IntPtr ownercreatedata);
 
     /// <summary>
-    /// 创建指数表达式
+    /// Creates an exponential expression
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPcreateExprExp(
@@ -345,7 +345,7 @@ internal static class ScipNativeMethods
         IntPtr ownercreatedata);
 
     /// <summary>
-    /// 创建对数表达式
+    /// Creates a logarithm expression
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPcreateExprLog(
@@ -356,7 +356,7 @@ internal static class ScipNativeMethods
         IntPtr ownercreatedata);
 
     /// <summary>
-    /// 创建绝对值表达式
+    /// Creates an absolute value expression
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPcreateExprAbs(
@@ -367,7 +367,7 @@ internal static class ScipNativeMethods
         IntPtr ownercreatedata);
 
     /// <summary>
-    /// 创建正弦表达式
+    /// Creates a sine expression
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPcreateExprSin(
@@ -378,7 +378,7 @@ internal static class ScipNativeMethods
         IntPtr ownercreatedata);
 
     /// <summary>
-    /// 创建余弦表达式
+    /// Creates a cosine expression
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPcreateExprCos(
@@ -389,17 +389,17 @@ internal static class ScipNativeMethods
         IntPtr ownercreatedata);
 
     /// <summary>
-    /// 释放表达式
+    /// Releases an expression
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPreleaseExpr(
         IntPtr scip,
         ref IntPtr expr);
 
-    // ===== 非线性约束 =====
+    // ===== Nonlinear Constraints =====
 
     /// <summary>
-    /// 创建基本非线性约束
+    /// Creates a basic nonlinear constraint
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public static extern ReturnCode SCIPcreateConsBasicNonlinear(
@@ -411,7 +411,7 @@ internal static class ScipNativeMethods
         double rhs);
 
     /// <summary>
-    /// 向非线性约束添加线性变量
+    /// Adds a linear variable to a nonlinear constraint
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern ReturnCode SCIPaddLinearVarNonlinear(
@@ -420,41 +420,41 @@ internal static class ScipNativeMethods
         IntPtr var,
         double coef);
 
-    // ===== 解池 =====
+    // ===== Solution Pool =====
 
 /// <summary>
-/// 获取解池中的所有解
+/// Gets all solutions in the solution pool
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 public static extern IntPtr SCIPgetSols(
     IntPtr scip);
 
 /// <summary>
-/// 获取特定解的原始目标值
+/// Gets the original objective value of a specific solution
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 public static extern double SCIPgetSolOrigObj(
     IntPtr scip,
     IntPtr sol);
 
-// ===== 计数/枚举所有可行解 =====
+// ===== Count/Enumerate All Feasible Solutions =====
 
 /// <summary>
-/// 设置计数参数（包括禁用 restarts 等安全设置）
+/// Sets counting parameters (including safe settings like disabling restarts)
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 public static extern ReturnCode SCIPsetParamsCountsols(
     IntPtr scip);
 
 /// <summary>
-/// 计数/枚举所有可行解（而不是只求解最优解）
+/// Counts/enumerates all feasible solutions (instead of only solving for the optimal solution)
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 public static extern ReturnCode SCIPcount(
     IntPtr scip);
 
 /// <summary>
-/// 获取计数的解数量
+/// Gets the number of counted solutions
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 public static extern long SCIPgetNCountedSols(
@@ -462,7 +462,7 @@ public static extern long SCIPgetNCountedSols(
     out IntPtr valid);
 
 /// <summary>
-/// 获取收集的稀疏解（这些解是相对于 active variables 的）
+/// Gets the collected sparse solutions (these solutions are relative to active variables)
 /// Note: Returns void in SCIP API, not ReturnCode
 /// The returned arrays are managed internally by SCIP and don't need to be freed by the caller
 /// </summary>
@@ -475,7 +475,7 @@ public static extern void SCIPgetCountedSparseSols(
     out int nsols);
 
 /// <summary>
-/// 查找约束处理器
+/// Finds a constraint handler
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 public static extern IntPtr SCIPfindConshdlr(
@@ -483,14 +483,14 @@ public static extern IntPtr SCIPfindConshdlr(
     [MarshalAs(UnmanagedType.LPStr)] string name);
 
 /// <summary>
-/// 获取变量名称
+/// Gets the variable name
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 public static extern IntPtr SCIPvarGetName(
     IntPtr var);
 
 /// <summary>
-/// 显式包含 countsols 约束处理器
+/// Explicitly includes the countsols constraint handler
 /// Note: This IS included by SCIPincludeDefaultPlugins() in SCIP 9.0+
 /// so we need to check if it's already included before calling this
 /// </summary>
@@ -499,21 +499,21 @@ public static extern ReturnCode SCIPincludeConshdlrCountsols(
     IntPtr scip);
 
 /// <summary>
-/// 获取稀疏解中的变量数组
+/// Gets the variable array in a sparse solution
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 public static extern IntPtr SCIPsparseSolGetVars(
     IntPtr sparsesol);
 
 /// <summary>
-/// 获取稀疏解中的变量数量
+/// Gets the number of variables in a sparse solution
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 public static extern int SCIPsparseSolGetNVars(
     IntPtr sparsesol);
 
 /// <summary>
-/// 获取稀疏解中的第一个具体解
+/// Gets the first concrete solution in a sparse solution
 /// Note: Returns void in SCIP API, not ReturnCode
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -523,7 +523,7 @@ public static extern void SCIPsparseSolGetFirstSol(
     int nvars);
 
 /// <summary>
-/// 获取稀疏解中的下一个具体解
+/// Gets the next concrete solution in a sparse solution
 /// Returns true if a next solution was found, false if no more solutions
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -534,7 +534,7 @@ public static extern bool SCIPsparseSolGetNextSol(
     int nvars);
 
 /// <summary>
-/// 将原始变量转换为活动变量的表示（用于将稀疏解从活动变量空间转换到原始变量空间）
+/// Converts original variables to active variable representation (used to convert sparse solutions from active variable space to original variable space)
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 public static extern ReturnCode SCIPgetProbvarLinearSum(
@@ -547,17 +547,17 @@ public static extern ReturnCode SCIPgetProbvarLinearSum(
     IntPtr scalars);
 
 /// <summary>
-/// 释放由SCIPgetProbvarLinearSum分配的内存
+/// Frees memory allocated by SCIPgetProbvarLinearSum
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 public static extern void SCIPfreeBufferArray(
     IntPtr scip,
     ref IntPtr ptr);
 
-// ===== Indicator 约束 =====
+// ===== Indicator Constraints =====
 
     /// <summary>
-    /// 创建基本 Indicator 约束：binvar = 1 时，sum(vals[i]*vars[i]) &lt;= rhs 成立
+    /// Creates a basic Indicator constraint: when binvar = 1, sum(vals[i]*vars[i]) &lt;= rhs holds
     /// </summary>
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public static extern ReturnCode SCIPcreateConsBasicIndicator(
@@ -571,10 +571,10 @@ public static extern void SCIPfreeBufferArray(
         double rhs);
 
 
-// ===== 获取参数值 =====
+// ===== Get Parameter Values =====
 
 /// <summary>
-/// 获取整数参数值
+/// Gets an integer parameter value
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 public static extern ReturnCode SCIPgetIntParam(
@@ -583,7 +583,7 @@ public static extern ReturnCode SCIPgetIntParam(
     out int value);
 
 /// <summary>
-/// 获取实数参数值
+/// Gets a real parameter value
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 public static extern ReturnCode SCIPgetRealParam(
@@ -592,7 +592,7 @@ public static extern ReturnCode SCIPgetRealParam(
     out double value);
 
 /// <summary>
-/// 获取布尔参数值
+/// Gets a boolean parameter value
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 public static extern ReturnCode SCIPgetBoolParam(
@@ -601,7 +601,7 @@ public static extern ReturnCode SCIPgetBoolParam(
     [MarshalAs(UnmanagedType.I1)] out bool value);
 
 /// <summary>
-/// 获取字符串参数值（调用者需释放返回的字符串）
+/// Gets a string parameter value (caller must free the returned string)
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 public static extern ReturnCode SCIPgetStringParam(
@@ -610,7 +610,7 @@ public static extern ReturnCode SCIPgetStringParam(
     out IntPtr value);
 
 /// <summary>
-/// 设置长整型参数
+/// Sets a long integer parameter
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 public static extern ReturnCode SCIPsetLongintParam(
@@ -619,7 +619,7 @@ public static extern ReturnCode SCIPsetLongintParam(
     long value);
 
 /// <summary>
-/// 获取长整型参数值
+/// Gets a long integer parameter value
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 public static extern ReturnCode SCIPgetLongintParam(
@@ -628,7 +628,7 @@ public static extern ReturnCode SCIPgetLongintParam(
     out long value);
 
 /// <summary>
-/// 设置参数强调模式
+/// Sets the parameter emphasis mode
 /// </summary>
 [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 public static extern ReturnCode SCIPsetEmphasis(

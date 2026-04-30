@@ -12,21 +12,28 @@ using ScipNet.Core;
 /// while maximizing the total price.
 ///
 /// Items (Fruits):
-///   1. Chestnut (栗子):  4kg, $4500
-///   2. Apple    (苹果):  5kg, $5700
-///   3. Orange   (橘子):  2kg, $2250
-///   4. Strawberry(草莓): 1kg, $1100
-///   5. Melon    (甜瓜):  6kg, $6700
+///   1. Chestnut:          4kg, $4500
+///   2. Apple:             5kg, $5700
+///   3. Orange:            2kg, $2250
+///   4. Strawberry:        1kg, $1100
+///   5. Melon:             6kg, $6700
 ///
 /// This example demonstrates:
 /// 1. How to model a 0-1 knapsack problem with an objective function
 /// 2. How to use Solution Pool to enumerate all feasible solutions (not just the optimal one)
-/// 3. How to analyze and display all feasible solutions
-/// 4. How to identify the optimal solution from enumerated solutions
+/// 3. How to use Model.EvaluateObjective() to calculate the objective value for each solution
+/// 4. How to analyze and display all feasible solutions
+/// 5. How to identify the optimal solution from enumerated solutions
 ///
 /// Note: Although we set a maximization objective, Count() will enumerate ALL feasible solutions,
 ///       not just the optimal one. The objective is useful for identifying which solution is best
-///       after enumeration.
+///       after enumeration using Model.EvaluateObjective().
+///
+/// Usage of Model.EvaluateObjective():
+///   After retrieving solutions with GetSparseSolutionsWithVariables(), you can calculate
+///   the objective value for any solution dictionary:
+///     double objValue = model.EvaluateObjective(solution);
+///   where 'solution' is a Dictionary<Variable, double> mapping variables to their values.
 /// </summary>
 public class Example4_KnapsackSolutionPool
 {
@@ -54,11 +61,11 @@ public class Example4_KnapsackSolutionPool
         // Define items
         var items = new Item[]
         {
-            new Item(1, "栗子", 4, 4500),
-            new Item(2, "苹果", 5, 5700),
-            new Item(3, "橘子", 2, 2250),
-            new Item(4, "草莓", 1, 1100),
-            new Item(5, "甜瓜", 6, 6700)
+            new Item(1, "Chestnut", 4, 4500),
+            new Item(2, "Apple", 5, 5700),
+            new Item(3, "Orange", 2, 2250),
+            new Item(4, "Strawberry", 1, 1100),
+            new Item(5, "Melon", 6, 6700)
         };
 
         double maxWeight = 8.0;  // Maximum weight capacity in kg
@@ -140,7 +147,7 @@ public class Example4_KnapsackSolutionPool
         Console.WriteLine($"{new string('=', 80)}");
 
         // Store solution details for analysis
-        var solutionDetails = new List<(int Index, List<Item> Items, double TotalWeight, int TotalPrice)>();
+        var solutionDetails = new List<(int Index, List<Item> Items, double TotalWeight, double TotalPrice)>();
 
         for (int i = 0; i < solutions.Count; i++)
         {
@@ -149,7 +156,6 @@ public class Example4_KnapsackSolutionPool
             // Get selected items and calculate totals
             var selectedItems = new List<Item>();
             double totalWeight = 0;
-            int totalPrice = 0;
 
             for (int j = 0; j < items.Length; j++)
             {
@@ -157,11 +163,13 @@ public class Example4_KnapsackSolutionPool
                 {
                     selectedItems.Add(items[j]);
                     totalWeight += items[j].Weight;
-                    totalPrice += items[j].Price;
                 }
             }
 
-            solutionDetails.Add((i + 1, selectedItems, totalWeight, totalPrice));
+            // Calculate objective value using Model.EvaluateObjective
+            double totalPrice = model.EvaluateObjective(sol);
+
+            solutionDetails.Add((i + 1, selectedItems, totalWeight, (int)totalPrice));
 
             // Display solution
             Console.WriteLine($"\nSolution #{i + 1}:");
@@ -171,7 +179,8 @@ public class Example4_KnapsackSolutionPool
                 Console.WriteLine($"    - {item.Name} ({item.Weight}kg, ${item.Price})");
             }
             Console.WriteLine($"  Total Weight: {totalWeight}kg (Limit: {maxWeight}kg)");
-            Console.WriteLine($"  Total Price:  ${totalPrice}");
+            Console.WriteLine($"  Total Price:  ${totalPrice:F2}");
+            Console.WriteLine($"  Objective Value: ${totalPrice:F2} (from Model.EvaluateObjective)");
         }
 
         // Step 8: Statistical Analysis

@@ -28,21 +28,21 @@ namespace ScipNet.Core;
 public abstract class NonlinearExpression
 {
     /// <summary>
-    /// 从变量隐式转换为非线性表达式
+    /// Implicit conversion from variable to nonlinear expression
     /// </summary>
     public static implicit operator NonlinearExpression(Variable var) => new VarExpr(var);
 
     /// <summary>
-    /// 从 double 隐式转换为非线性表达式
+    /// Implicit conversion from double to nonlinear expression
     /// </summary>
     public static implicit operator NonlinearExpression(double value) => new ConstExpr(value);
 
     /// <summary>
-    /// 从 LinearExpression 隐式转换为非线性表达式
+    /// Implicit conversion from LinearExpression to nonlinear expression
     /// </summary>
     public static implicit operator NonlinearExpression(LinearExpression linear) => FromLinear(linear);
 
-    // ===== 算术运算符 =====
+    // ===== Arithmetic Operators =====
 
     public static NonlinearExpression operator +(NonlinearExpression left, NonlinearExpression right)
         => new SumExpr(new[] { left, right }, new[] { 1.0, 1.0 }, 0.0);
@@ -61,57 +61,57 @@ public abstract class NonlinearExpression
 
     public static NonlinearExpression operator +(NonlinearExpression expr) => expr;
 
-    // ===== 数学函数 =====
+    // ===== Mathematical Functions =====
 
     /// <summary>
-    /// 指数函数 exp(x)
+    /// Exponential function exp(x)
     /// </summary>
     public static NonlinearExpression Exp(NonlinearExpression arg) => new ExpExpr(arg);
 
     /// <summary>
-    /// 自然对数 log(x)
+    /// Natural logarithm log(x)
     /// </summary>
     public static NonlinearExpression Log(NonlinearExpression arg) => new LogExpr(arg);
 
     /// <summary>
-    /// 平方根 sqrt(x)
+    /// Square root sqrt(x)
     /// </summary>
     public static NonlinearExpression Sqrt(NonlinearExpression arg) => new PowExpr(arg, 0.5);
 
     /// <summary>
-    /// 绝对值 abs(x)
+    /// Absolute value abs(x)
     /// </summary>
     public static NonlinearExpression Abs(NonlinearExpression arg) => new AbsExpr(arg);
 
     /// <summary>
-    /// 幂运算 x^n
+    /// Power function x^n
     /// </summary>
     public static NonlinearExpression Pow(NonlinearExpression baseExpr, double exponent) => new PowExpr(baseExpr, exponent);
 
     /// <summary>
-    /// 正弦函数 sin(x)
+    /// Sine function sin(x)
     /// Note: Input should be in radians
     /// </summary>
     public static NonlinearExpression Sin(NonlinearExpression arg) => new SinExpr(arg);
 
     /// <summary>
-    /// 余弦函数 cos(x)
+    /// Cosine function cos(x)
     /// Note: Input should be in radians
     /// </summary>
     public static NonlinearExpression Cos(NonlinearExpression arg) => new CosExpr(arg);
 
-    // ===== 约束创建 =====
+    // ===== Constraint Creation =====
 
     public NonlinearConstraint Leq(double rhs) => new NonlinearConstraint(this, double.NegativeInfinity, rhs);
     public NonlinearConstraint Geq(double rhs) => new NonlinearConstraint(this, rhs, double.PositiveInfinity);
     public NonlinearConstraint Eq(double rhs) => new NonlinearConstraint(this, rhs, rhs);
     public NonlinearConstraint Between(double lhs, double rhs) => new NonlinearConstraint(this, lhs, rhs);
 
-    // ===== 构建原生表达式 =====
+    // ===== Build Native Expression =====
 
     internal abstract IntPtr BuildExpr(ScipHandle scip);
 
-    // ===== 从 LinearExpression 转换 =====
+    // ===== Conversion from LinearExpression =====
 
     private static NonlinearExpression FromLinear(LinearExpression linear)
     {
@@ -123,10 +123,10 @@ public abstract class NonlinearExpression
         return result;
     }
 
-    // ===== 私有嵌套节点类型 =====
+    // ===== Private Nested Node Types =====
 
     /// <summary>
-    /// 变量表达式节点
+    /// Variable expression node
     /// </summary>
     private sealed class VarExpr : NonlinearExpression
     {
@@ -148,7 +148,7 @@ public abstract class NonlinearExpression
     }
 
     /// <summary>
-    /// 常量表达式节点
+    /// Constant expression node
     /// </summary>
     private sealed class ConstExpr : NonlinearExpression
     {
@@ -170,7 +170,7 @@ public abstract class NonlinearExpression
     }
 
     /// <summary>
-    /// 求和表达式节点
+    /// Sum expression node
     /// </summary>
     private sealed class SumExpr : NonlinearExpression
     {
@@ -192,13 +192,13 @@ public abstract class NonlinearExpression
 
             try
             {
-                // 递归构建所有子表达式
+                // Recursively build all child expressions
                 for (int i = 0; i < nchildren; i++)
                 {
                     childPtrs[i] = _children[i].BuildExpr(scip);
                 }
 
-                // 分配系数数组
+                // Allocate coefficient array
                 IntPtr coefficientsPtr = Marshal.AllocHGlobal(nchildren * sizeof(double));
                 try
                 {
@@ -208,7 +208,7 @@ public abstract class NonlinearExpression
                         Marshal.WriteInt64(coefficientsPtr + i * sizeof(double), bits);
                     }
 
-                    // 分配子表达式指针数组
+                    // Allocate child expression pointer array
                     IntPtr childrenPtr = Marshal.AllocHGlobal(nchildren * IntPtr.Size);
                     try
                     {
@@ -236,7 +236,7 @@ public abstract class NonlinearExpression
             }
             finally
             {
-                // 父表达式已捕获子节点，释放子节点的引用
+                // Parent expression has captured child nodes, release child node references
                 for (int i = 0; i < childPtrs.Length; i++)
                 {
                     if (childPtrs[i] != IntPtr.Zero)
@@ -268,7 +268,7 @@ public abstract class NonlinearExpression
     }
 
     /// <summary>
-    /// 乘积表达式节点
+    /// Product expression node
     /// </summary>
     private sealed class ProductExpr : NonlinearExpression
     {
@@ -335,7 +335,7 @@ public abstract class NonlinearExpression
     }
 
     /// <summary>
-    /// 幂运算表达式节点
+    /// Power expression node
     /// </summary>
     private sealed class PowExpr : NonlinearExpression
     {
@@ -368,7 +368,7 @@ public abstract class NonlinearExpression
     }
 
     /// <summary>
-    /// 指数表达式节点
+    /// Exponential expression node
     /// </summary>
     private sealed class ExpExpr : NonlinearExpression
     {
@@ -399,7 +399,7 @@ public abstract class NonlinearExpression
     }
 
     /// <summary>
-    /// 对数表达式节点
+    /// Logarithm expression node
     /// </summary>
     private sealed class LogExpr : NonlinearExpression
     {
@@ -430,7 +430,7 @@ public abstract class NonlinearExpression
     }
 
     /// <summary>
-    /// 绝对值表达式节点
+    /// Absolute value expression node
     /// </summary>
     private sealed class AbsExpr : NonlinearExpression
     {
@@ -461,7 +461,7 @@ public abstract class NonlinearExpression
     }
 
     /// <summary>
-    /// 正弦表达式节点
+    /// Sine expression node
     /// </summary>
     private sealed class SinExpr : NonlinearExpression
     {
@@ -492,7 +492,7 @@ public abstract class NonlinearExpression
     }
 
     /// <summary>
-    /// 余弦表达式节点
+    /// Cosine expression node
     /// </summary>
     private sealed class CosExpr : NonlinearExpression
     {

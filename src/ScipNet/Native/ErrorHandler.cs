@@ -3,17 +3,17 @@ using ScipNet.Core;
 namespace ScipNet.Native;
 
 /// <summary>
-/// SCIP 异常基类
+/// SCIP exception base class
 /// </summary>
 public class ScipException : Exception
 {
     /// <summary>
-    /// 关联的返回码
+    /// Associated return code
     /// </summary>
     public ReturnCode ReturnCode { get; }
 
     /// <summary>
-    /// 初始化新实例
+    /// Initializes a new instance
     /// </summary>
     public ScipException(ReturnCode returnCode, string? message = null)
         : base(message ?? returnCode.ToString())
@@ -22,7 +22,7 @@ public class ScipException : Exception
     }
 
     /// <summary>
-    /// 初始化新实例（带内部异常）
+    /// Initializes a new instance (with inner exception)
     /// </summary>
     public ScipException(ReturnCode returnCode, string message, Exception innerException)
         : base(message, innerException)
@@ -32,7 +32,7 @@ public class ScipException : Exception
 }
 
 /// <summary>
-/// 内存不足异常
+/// Insufficient memory exception
 /// </summary>
 public sealed class ScipMemoryException : ScipException
 {
@@ -43,7 +43,7 @@ public sealed class ScipMemoryException : ScipException
 }
 
 /// <summary>
-/// LP 求解器异常
+/// LP solver exception
 /// </summary>
 public sealed class ScipLpException : ScipException
 {
@@ -54,7 +54,7 @@ public sealed class ScipLpException : ScipException
 }
 
 /// <summary>
-/// 参数异常
+/// Parameter exception
 /// </summary>
 public sealed class ScipParameterException : ScipException
 {
@@ -68,7 +68,7 @@ public sealed class ScipParameterException : ScipException
 }
 
 /// <summary>
-/// 无效调用异常
+/// Invalid call exception
 /// </summary>
 public sealed class ScipInvalidCallException : ScipException
 {
@@ -79,7 +79,7 @@ public sealed class ScipInvalidCallException : ScipException
 }
 
 /// <summary>
-/// 不可行异常
+/// Infeasible exception
 /// </summary>
 public sealed class ScipInfeasibleException : ScipException
 {
@@ -90,12 +90,12 @@ public sealed class ScipInfeasibleException : ScipException
 }
 
 /// <summary>
-/// 错误处理工具类
+/// Error handling utility class
 /// </summary>
 public static class ErrorHandler
 {
     /// <summary>
-    /// 检查返回码并在出错时抛出异常
+    /// Checks return code and throws exception on error
     /// </summary>
     public static void CheckReturnCode(ReturnCode returnCode, string? context = null)
     {
@@ -119,7 +119,7 @@ public static class ErrorHandler
     }
 
     /// <summary>
-    /// 检查返回码并返回是否成功
+    /// Checks return code and returns whether successful
     /// </summary>
     public static bool TryCheckReturnCode(ReturnCode returnCode)
     {

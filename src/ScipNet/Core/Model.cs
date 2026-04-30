@@ -5,7 +5,7 @@ using ScipNet.Native;
 namespace ScipNet.Core;
 
 /// <summary>
-/// 代表 SCIP 优化问题模型
+/// Represents a SCIP optimization problem model
 /// </summary>
 public sealed class Model : IDisposable
 {
@@ -15,32 +15,33 @@ public sealed class Model : IDisposable
     private readonly Dictionary<IntPtr, Variable> _varPtrToVarMap; // Mapping from var pointer to Variable object
     private readonly Dictionary<string, Variable> _varNameToVarMap; // Mapping from var name to Variable object
     private bool _disposed;
+    private LinearExpression? _linearObjective; // Store linear objective for evaluation when Count() doesn't return __objvar__
 
     /// <summary>
-    /// 获取模型名称
+    /// Gets the model name
     /// </summary>
     public string Name { get; private set; }
 
     /// <summary>
-    /// 获取目标函数方向
+    /// Gets the objective sense
     /// </summary>
     public ObjectiveSense ObjectiveSense { get; private set; }
 
     /// <summary>
-    /// 获取所有变量
+    /// Gets all variables
     /// </summary>
     public IReadOnlyCollection<Variable> Variables => _variables.Values;
 
     /// <summary>
-    /// 获取所有约束
+    /// Gets all constraints
     /// </summary>
     public IReadOnlyCollection<Constraint> Constraints => _constraints.Values;
 
     /// <summary>
-    /// 创建一个新的 SCIP 模型
+    /// Creates a new SCIP model
     /// </summary>
-    /// <param name="name">模型名称</param>
-    /// <param name="includeDefaultPlugins">是否包含默认插件</param>
+    /// <param name="name">Model name</param>
+    /// <param name="includeDefaultPlugins">Whether to include default plugins</param>
     public Model(string name = "model", bool includeDefaultPlugins = true)
     {
         ReturnCode ret = ScipNativeMethods.SCIPcreate(out IntPtr scipPtr);
@@ -50,7 +51,7 @@ public sealed class Model : IDisposable
         _variables = new Dictionary<string, Variable>();
         _constraints = new Dictionary<string, Constraint>();
         _varPtrToVarMap = new Dictionary<IntPtr, Variable>();
-        _varNameToVarMap = new Dictionary<string, Variable>(); // For name-based lookup
+        _varNameToVarMap = new Dictionary<string, Variable>(); // For name-based variable lookup
         Name = name;
         ObjectiveSense = ObjectiveSense.Minimize;
 
@@ -63,7 +64,7 @@ public sealed class Model : IDisposable
     }
 
     /// <summary>
-    /// 添加变量到模型
+    /// Adds a variable to the model
     /// </summary>
     public Variable AddVariable(
         string name,
@@ -92,11 +93,11 @@ public sealed class Model : IDisposable
     }
 
     /// <summary>
-    /// 添加约束到模型
+    /// Adds a constraint to the model
     /// </summary>
     public T AddConstraint<T>(T constraint) where T : Constraint
     {
-        // 设置约束的模型引用
+        // Set constraint model reference
         constraint.Model = this;
 
         IntPtr consPtr = constraint.AddToModel();
@@ -105,7 +106,7 @@ public sealed class Model : IDisposable
     }
 
     /// <summary>
-    /// 设置目标函数方向
+    /// Sets the objective sense
     /// </summary>
     public void SetObjectiveSense(ObjectiveSense sense)
     {
@@ -115,16 +116,28 @@ public sealed class Model : IDisposable
     }
 
     /// <summary>
-    /// 设置目标函数（线性）
+    /// Sets the objective function (linear)
     /// </summary>
-    /// <param name="expression">目标函数表达式</param>
-    /// <param name="sense">目标函数方向</param>
+    /// <param name="expression">Objective function expression</param>
+    /// <param name="sense">Objective sense</param>
+    /// <remarks>
+    /// Linear objectives use SCIP's native method (via SCIPchgVarObj), not epigraph transformation.
+    /// This is for compatibility with Count() functionality, because Count() only returns original
+    /// decision variables, not auxiliary variables. Therefore, we store the expression to manually
+    /// calculate the objective value in EvaluateObjective().
+    ///
+    /// Nonlinear objective functions still use epigraph transformation, as SCIP requires it.
+    /// </remarks>
     public void SetObjective(LinearExpression expression, ObjectiveSense sense)
     {
-        // 设置目标函数方向
+        // Store the linear objective for later evaluation
+        // This is needed because Count() doesn't return auxiliary variables like __objvar__
+        _linearObjective = expression;
+
+        // Set objective sense
         SetObjectiveSense(sense);
-        
-        // 设置目标函数系数
+
+        // Set objective coefficients (SCIP native method)
         foreach (var kvp in expression.Coefficients)
         {
             ReturnCode ret = ScipNativeMethods.SCIPchgVarObj(_scipHandle, kvp.Key.VarPtr, kvp.Value);
@@ -133,16 +146,74 @@ public sealed class Model : IDisposable
     }
 
     /// <summary>
-    /// 设置目标函数（非线性，通过 epigraph reformulation 自动转换）
+    /// Calculates the objective value for a given solution
     /// </summary>
-    /// <param name="expression">非线性目标函数表达式</param>
-    /// <param name="sense">目标函数方向</param>
+    /// <param name="solution">Solution dictionary with variables as keys and their values.
+    /// Typically from the solution list returned by GetSparseSolutionsWithVariables()</param>
+    /// <returns>Objective function value. Returns 0.0 if no objective is set</returns>
+    /// <remarks>
+    /// This method handles evaluation for both linear and nonlinear objective functions:
+    ///
+    /// 1. Linear objective functions: Use the stored expression to calculate directly
+    ///    - Reason: SCIP's Count() functionality only returns original decision variables, not auxiliary variables
+    ///    - Therefore, we store the linear expression to manually calculate the objective value
+    ///
+    /// 2. Nonlinear objective functions: Look for the auxiliary variable named "__objvar__"
+    ///    - Nonlinear objectives are transformed via epigraph: maximize f(x) → maximize objvar, subject to f(x) >= objvar
+    ///    - The objective value is obtained by looking for __objvar__'s value in the solution
+    ///
+    /// Reason for this design difference:
+    /// - Linear objectives can use SCIP's native method (SCIPchgVarObj) to keep the problem simple
+    /// - Nonlinear objectives must go through epigraph transformation; SCIP's native solver doesn't directly support nonlinear objectives
+    /// - Count() only returns original variables, so linear objectives need to store expressions for evaluation
+    ///
+    /// Usage example:
+    /// <code>
+    /// var solutions = model.GetSparseSolutionsWithVariables();
+    /// foreach (var solution in solutions)
+    /// {
+    ///     double objValue = model.EvaluateObjective(solution);
+    ///     Console.WriteLine($"Objective: {objValue}");
+    /// }
+    /// </code>
+    /// </remarks>
+    public double EvaluateObjective(Dictionary<Variable, double> solution)
+    {
+        // First check if __objvar__ exists (for nonlinear objectives)
+        if (_varNameToVarMap.TryGetValue("__objvar__", out Variable? objVar) && solution.TryGetValue(objVar, out double objVal))
+        {
+            return objVal;
+        }
+
+        // If no __objvar__, try using the stored linear expression to calculate
+        if (_linearObjective != null)
+        {
+            double objectiveValue = _linearObjective.Constant;
+            foreach (var kvp in _linearObjective.Coefficients)
+            {
+                if (solution.TryGetValue(kvp.Key, out double varValue))
+                {
+                    objectiveValue += kvp.Value * varValue;
+                }
+            }
+            return objectiveValue;
+        }
+
+        // No objective function set
+        return 0.0;
+    }
+
+    /// <summary>
+    /// Sets the objective function (nonlinear, automatically converted via epigraph reformulation)
+    /// </summary>
+    /// <param name="expression">Nonlinear objective function expression</param>
+    /// <param name="sense">Objective sense</param>
     public void SetObjective(NonlinearExpression expression, ObjectiveSense sense)
     {
-        // 设置目标函数方向
+        // Set objective sense
         SetObjectiveSense(sense);
 
-        // 创建辅助连续变量 objvar（目标系数为 1.0），注册到 _variables 以确保 Dispose 时释放
+        // Create auxiliary continuous variable objvar (objective coefficient = 1.0), register to _variables to ensure release on Dispose
         ReturnCode ret = ScipNativeMethods.SCIPcreateVarBasic(
             _scipHandle,
             out IntPtr objVarPtr,
@@ -160,13 +231,13 @@ public sealed class Model : IDisposable
             double.NegativeInfinity, double.PositiveInfinity);
         _variables[objVar.Name] = objVar;
 
-        // 构建原生表达式树
+        // Build native expression tree
         IntPtr exprPtr = expression.BuildExpr(_scipHandle);
         try
         {
             // epigraph reformulation:
-            //   minimize f(x)  →  constraint: f(x) - objvar <= 0,  即 f(x) <= objvar
-            //   maximize f(x)  →  constraint: f(x) - objvar >= 0,  即 f(x) >= objvar
+            //   minimize f(x)  →  constraint: f(x) - objvar <= 0,  i.e., f(x) <= objvar
+            //   maximize f(x)  →  constraint: f(x) - objvar >= 0,  i.e., f(x) >= objvar
             double lhs = sense == ObjectiveSense.Minimize ? double.NegativeInfinity : 0.0;
             double rhs = sense == ObjectiveSense.Minimize ? 0.0 : double.PositiveInfinity;
 
@@ -179,16 +250,16 @@ public sealed class Model : IDisposable
                 rhs);
             ErrorHandler.CheckReturnCode(ret, "Failed to create objective constraint");
 
-            // 将 objvar 的系数 -1.0 添加到约束的线性部分
-            // 约束实际表达: f(x) - 1.0*objvar <= 0 (min) 或 >= 0 (max)
+            // Add objvar with coefficient -1.0 to the linear part of the constraint
+            // Constraint actual expression: f(x) - 1.0*objvar <= 0 (min) or >= 0 (max)
             ret = ScipNativeMethods.SCIPaddLinearVarNonlinear(_scipHandle, consPtr, objVarPtr, -1.0);
             ErrorHandler.CheckReturnCode(ret, "Failed to add linear var to objective constraint");
 
-            // 添加约束
+            // Add constraint
             ret = ScipNativeMethods.SCIPaddCons(_scipHandle, consPtr);
             ErrorHandler.CheckReturnCode(ret, "Failed to add objective constraint");
 
-            // 记录约束（由 Model 管理释放）
+            // Record constraint (managed and released by Model)
             var objCons = new NonlinearConstraint(expression, lhs, rhs, "__objcons__");
             objCons.Model = this;
             objCons.SetConsPtrInternal(consPtr);
@@ -196,15 +267,15 @@ public sealed class Model : IDisposable
         }
         finally
         {
-            // 释放表达式（约束已捕获）
+            // Release expression (already captured by constraint)
             ScipNativeMethods.SCIPreleaseExpr(_scipHandle, ref exprPtr);
         }
     }
 
-/// <summary>
-/// 优化模型
-/// </summary>
-public SolveStatus Optimize()
+    /// <summary>
+    /// Optimizes the model
+    /// </summary>
+    public SolveStatus Optimize()
 {
     ReturnCode ret = ScipNativeMethods.SCIPsolve(_scipHandle);
     ErrorHandler.CheckReturnCode(ret, "Failed to solve");
@@ -248,7 +319,7 @@ public SolveStatus Count()
 }
 
 /// <summary>
-/// 获取计数的解数量
+/// Gets the number of counted solutions
 /// </summary>
 public long GetCountedSolutionsCount()
 {
@@ -390,7 +461,7 @@ public List<Dictionary<Variable, double>> GetSparseSolutionsWithVariables()
 }
 
 /// <summary>
-/// 获取最优解
+/// Gets the best (optimal) solution
 /// </summary>
     public Solution? GetBestSolution()
     {
@@ -404,7 +475,7 @@ public List<Dictionary<Variable, double>> GetSparseSolutionsWithVariables()
     }
 
     /// <summary>
-    /// 获取解池中的所有解
+    /// Gets all solutions from the solution pool
     /// </summary>
     public IReadOnlyList<Solution> GetSolutions()
     {
@@ -432,12 +503,12 @@ public List<Dictionary<Variable, double>> GetSparseSolutionsWithVariables()
     }
 
     /// <summary>
-    /// 获取解池中的解数量
+    /// Gets the number of solutions in the solution pool
     /// </summary>
     public int SolutionCount => ScipNativeMethods.SCIPgetNSols(_scipHandle);
 
     /// <summary>
-    /// 设置布尔参数
+    /// Sets a boolean parameter
     /// </summary>
     public void SetBoolParam(string name, bool value)
     {
@@ -446,7 +517,7 @@ public List<Dictionary<Variable, double>> GetSparseSolutionsWithVariables()
     }
 
 /// <summary>
-/// 设置整数参数
+/// Sets an integer parameter
 /// </summary>
 public void SetIntParam(string name, int value)
 {
@@ -455,7 +526,7 @@ public void SetIntParam(string name, int value)
 }
 
 /// <summary>
-/// 设置长整型参数
+/// Sets a long integer parameter
 /// </summary>
 public void SetLongParam(string name, long value)
 {
@@ -464,7 +535,7 @@ public void SetLongParam(string name, long value)
 }
 
 /// <summary>
-/// 设置实数参数
+/// Sets a real (floating-point) parameter
 /// </summary>
     public void SetRealParam(string name, double value)
     {
@@ -473,7 +544,7 @@ public void SetLongParam(string name, long value)
     }
 
     /// <summary>
-    /// 设置字符串参数
+    /// Sets a string parameter
     /// </summary>
     public void SetStringParam(string name, string value)
     {
@@ -482,7 +553,7 @@ public void SetLongParam(string name, long value)
     }
 
     /// <summary>
-    /// 获取统计信息
+    /// Gets statistics information
     /// </summary>
     public Statistics GetStatistics()
     {
@@ -490,7 +561,7 @@ public void SetLongParam(string name, long value)
     }
 
     /// <summary>
-    /// 获取整数参数值
+    /// Gets an integer parameter value
     /// </summary>
     public int GetIntParam(string name)
     {
@@ -500,7 +571,7 @@ public void SetLongParam(string name, long value)
     }
 
     /// <summary>
-    /// 获取实数参数值
+    /// Gets a real (floating-point) parameter value
     /// </summary>
     public double GetRealParam(string name)
     {
@@ -510,7 +581,7 @@ public void SetLongParam(string name, long value)
     }
 
     /// <summary>
-    /// 获取布尔参数值
+    /// Gets a boolean parameter value
     /// </summary>
     public bool GetBoolParam(string name)
     {
@@ -520,7 +591,7 @@ public void SetLongParam(string name, long value)
     }
 
 /// <summary>
-/// 获取字符串参数值
+/// Gets a string parameter value
 /// </summary>
 public string? GetStringParam(string name)
 {
@@ -534,10 +605,9 @@ public string? GetStringParam(string name)
 }
 
 /// <summary>
-/// 设置参数强调模式
-/// </summary>
-/// <param name="paramEmphasis">参数强调模式</param>
-/// <param name="quiet">是否静默设置（不输出信息）</param>
+/// Sets parameter emphasis mode
+/// <param name="paramEmphasis">Parameter emphasis mode</param>
+/// <param name="quiet">Whether to set quietly (no output)</param>
 public void SetEmphasis(ParamEmphasis paramEmphasis, bool quiet = false)
 {
     ReturnCode ret = ScipNativeMethods.SCIPsetEmphasis(_scipHandle, paramEmphasis, quiet);
@@ -545,13 +615,13 @@ public void SetEmphasis(ParamEmphasis paramEmphasis, bool quiet = false)
 }
 
 /// <summary>
-/// 释放资源
+/// Releases resources
 /// </summary>
     public void Dispose()
     {
         if (!_disposed)
         {
-            // 释放所有变量
+            // Release all variables
             foreach (var kvp in _variables)
             {
                 IntPtr varPtr = kvp.Value.VarPtr;
@@ -560,13 +630,13 @@ public void SetEmphasis(ParamEmphasis paramEmphasis, bool quiet = false)
                     ReturnCode ret = ScipNativeMethods.SCIPreleaseVar(_scipHandle, ref varPtr);
                     if (ret != ReturnCode.Okay)
                     {
-                        // 忽略释放失败，继续释放其他资源
+                        // Ignore release failure, continue releasing other resources
                     }
-                    // varPtr 现在应该为 IntPtr.Zero（由 SCIPreleaseVar 设置）
+                    // varPtr should now be IntPtr.Zero (set by SCIPreleaseVar)
                 }
             }
 
-            // 释放所有约束
+            // Release all constraints
             foreach (var kvp in _constraints)
             {
                 IntPtr consPtr = kvp.Value.ConsPtr;
@@ -575,13 +645,13 @@ public void SetEmphasis(ParamEmphasis paramEmphasis, bool quiet = false)
                     ReturnCode ret = ScipNativeMethods.SCIPreleaseCons(_scipHandle, ref consPtr);
                     if (ret != ReturnCode.Okay)
                     {
-                        // 忽略释放失败，继续释放其他资源
+                        // Ignore release failure, continue releasing other resources
                     }
-                    // consPtr 现在应该为 IntPtr.Zero（由 SCIPreleaseCons 设置）
+                    // consPtr should now be IntPtr.Zero (set by SCIPreleaseCons)
                 }
             }
 
-            // 释放SCIP实例
+            // Release SCIP instance
             _scipHandle?.Dispose();
             _disposed = true;
         }

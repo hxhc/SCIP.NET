@@ -3,7 +3,7 @@ using ScipNet.Native;
 namespace ScipNet.Core;
 
 /// <summary>
-/// 代表优化问题中的决策变量
+/// Represents a decision variable in the optimization problem
 /// </summary>
 public sealed class Variable
 {
@@ -15,22 +15,22 @@ public sealed class Variable
     private double _ub;
 
     /// <summary>
-    /// 获取变量名称
+    /// Gets the variable name
     /// </summary>
     public string Name => _name;
 
     /// <summary>
-    /// 获取变量类型
+    /// Gets the variable type
     /// </summary>
     public VariableType Type => _type;
 
     /// <summary>
-    /// 获取下界
+    /// Gets the lower bound
     /// </summary>
     public double LowerBound => _lb;
 
     /// <summary>
-    /// 获取上界
+    /// Gets the upper bound
     /// </summary>
     public double UpperBound => _ub;
 
@@ -53,7 +53,7 @@ public sealed class Variable
     internal IntPtr VarPtr => _varPtr;
 
     /// <summary>
-    /// 获取变量在指定解中的值
+    /// Gets the value of the variable in the specified solution
     /// </summary>
     public double GetSolValue(Solution solution)
     {
@@ -61,7 +61,7 @@ public sealed class Variable
     }
 
     /// <summary>
-    /// 创建 Indicator 约束：当此二元变量为 1 时，给定线性约束成立
+    /// Creates an Indicator constraint: when this binary variable is 1, the given linear constraint holds
     /// </summary>
     public IndicatorConstraint Implies(LinearConstraint constraint, string? name = null)
     {
@@ -69,7 +69,7 @@ public sealed class Variable
     }
 
     /// <summary>
-    /// 创建线性表达式（乘法）
+    /// Creates a linear expression (multiplication)
     /// </summary>
     public static LinearExpression operator *(Variable variable, double coefficient)
     {
@@ -82,7 +82,7 @@ public sealed class Variable
     }
 
     /// <summary>
-    /// 创建线性表达式（加法）
+    /// Creates a linear expression (addition)
     /// </summary>
     public static LinearExpression operator +(Variable variable, double value)
     {
@@ -100,7 +100,7 @@ public sealed class Variable
     }
 
     /// <summary>
-    /// 创建线性表达式（减法）
+    /// Creates a linear expression (subtraction)
     /// </summary>
     public static LinearExpression operator -(Variable variable, double value)
     {

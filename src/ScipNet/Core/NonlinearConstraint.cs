@@ -2,9 +2,9 @@ using ScipNet.Native;
 
 namespace ScipNet.Core;
 
-/// <summary>
-/// 代表非线性约束
-/// </summary>
+    /// <summary>
+    /// Represents a nonlinear constraint
+    /// </summary>
 public sealed class NonlinearConstraint : Constraint
 {
     private readonly NonlinearExpression _expression;
@@ -12,17 +12,17 @@ public sealed class NonlinearConstraint : Constraint
     private readonly double _rhs;
 
     /// <summary>
-    /// 获取表达式
+    /// Gets the expression
     /// </summary>
     public NonlinearExpression Expression => _expression;
 
     /// <summary>
-    /// 获取下界
+    /// Gets the lower bound
     /// </summary>
     public double LowerBound => _lhs;
 
     /// <summary>
-    /// 获取上界
+    /// Gets the upper bound
     /// </summary>
     public double UpperBound => _rhs;
 
@@ -40,12 +40,12 @@ public sealed class NonlinearConstraint : Constraint
 
     internal override IntPtr AddToModel()
     {
-        // 构建原生表达式树
+        // Build native expression tree
         IntPtr exprPtr = _expression.BuildExpr(Model.ScipHandle);
 
         try
         {
-            // 创建非线性约束
+            // Create nonlinear constraint
             ReturnCode ret = ScipNativeMethods.SCIPcreateConsBasicNonlinear(
                 Model.ScipHandle,
                 out IntPtr consPtr,
@@ -55,7 +55,7 @@ public sealed class NonlinearConstraint : Constraint
                 _rhs);
             ErrorHandler.CheckReturnCode(ret, $"Failed to create nonlinear constraint {Name}");
 
-            // 添加约束到模型
+            // Add constraint to model
             ret = ScipNativeMethods.SCIPaddCons(Model.ScipHandle, consPtr);
             ErrorHandler.CheckReturnCode(ret, $"Failed to add nonlinear constraint {Name}");
 
@@ -64,7 +64,7 @@ public sealed class NonlinearConstraint : Constraint
         }
         finally
         {
-            // 始终释放表达式（约束已捕获/复制它）
+            // Always release the expression (constraint has captured/copied it)
             ScipNativeMethods.SCIPreleaseExpr(Model.ScipHandle, ref exprPtr);
         }
     }

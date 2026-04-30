@@ -3,12 +3,12 @@ using Microsoft.Win32.SafeHandles;
 namespace ScipNet.Native;
 
 /// <summary>
-/// SCIP 表达式句柄的 SafeHandle 实现
+/// SafeHandle implementation for SCIP expression handles
 /// </summary>
 public sealed class ExprHandle : SafeHandleZeroOrMinusOneIsInvalid
 {
     /// <summary>
-    /// 从现有指针初始化
+    /// Initialize from existing pointer
     /// </summary>
     public ExprHandle(IntPtr handle, bool ownsHandle) : base(ownsHandle)
     {
@@ -16,7 +16,7 @@ public sealed class ExprHandle : SafeHandleZeroOrMinusOneIsInvalid
     }
 
     /// <summary>
-    /// 释放句柄
+    /// Release handle
     /// </summary>
     protected override bool ReleaseHandle()
     {
@@ -29,7 +29,7 @@ public sealed class ExprHandle : SafeHandleZeroOrMinusOneIsInvalid
     }
 
     /// <summary>
-    /// 隐式转换为 IntPtr
+    /// Implicit conversion to IntPtr
     /// </summary>
     public static implicit operator IntPtr(ExprHandle exprHandle)
     {

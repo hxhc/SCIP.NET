@@ -1,423 +1,423 @@
 namespace ScipNet.Core;
 
 /// <summary>
-/// 变量类型，对应 SCIP_VARTYPE
+/// Variable type, corresponds to SCIP_VARTYPE
 /// </summary>
 public enum VariableType
 {
     /// <summary>
-    /// 二元变量：x ∈ {0, 1}
+    /// Binary variable: x ∈ {0, 1}
     /// </summary>
     Binary = 0,
 
     /// <summary>
-    /// 整数变量：x ∈ {lb, ..., ub}
+    /// Integer variable: x ∈ {lb, ..., ub}
     /// </summary>
     Integer = 1,
 
     /// <summary>
-    /// 连续变量：lb ≤ x ≤ ub
+    /// Continuous variable: lb ≤ x ≤ ub
     /// </summary>
     Continuous = 3
 }
 
 /// <summary>
-/// 目标函数方向，对应 SCIP_OBJSENSE
+/// Objective function direction, corresponds to SCIP_OBJSENSE
 /// </summary>
 public enum ObjectiveSense
 {
     /// <summary>
-    /// 最大化
+    /// Maximize
     /// </summary>
     Maximize = -1,
 
     /// <summary>
-    /// 最小化（默认）
+    /// Minimize (default)
     /// </summary>
     Minimize = 1
 }
 
 /// <summary>
-/// 求解状态，对应 SCIP_STATUS
+/// Solve status, corresponds to SCIP_STATUS
 /// </summary>
 public enum SolveStatus
 {
     /// <summary>
-    /// 求解状态未知
+    /// Unknown solve status
     /// </summary>
     Unknown = 0,
 
     /// <summary>
-    /// 问题已求解至最优，最优解可用
+    /// Problem solved to optimality, optimal solution available
     /// </summary>
     Optimal = 1,
 
     /// <summary>
-    /// 问题被证明不可行
+    /// Problem proven infeasible
     /// </summary>
     Infeasible = 2,
 
     /// <summary>
-    /// 问题被证明无界
+    /// Problem proven unbounded
     /// </summary>
     Unbounded = 3,
 
     /// <summary>
-    /// 问题被证明不可行或无界
+    /// Problem proven infeasible or unbounded
     /// </summary>
     InfeasibleOrUnbounded = 4,
 
     /// <summary>
-    /// 用户中断求解过程（SIGINT 或 SCIPinterruptSolve()）
+    /// User interrupted solving process (SIGINT or SCIPinterruptSolve())
     /// </summary>
     UserInterrupt = 10,
 
     /// <summary>
-    /// 进程收到 SIGTERM 信号
+    /// Process received SIGTERM signal
     /// </summary>
     Terminate = 11,
 
     /// <summary>
-    /// 因达到节点限制而中断
+    /// Interrupted due to node limit
     /// </summary>
     NodeLimit = 20,
 
     /// <summary>
-    /// 因达到总节点限制而中断（包括重启）
+    /// Interrupted due to total node limit (including restarts)
     /// </summary>
     TotalNodeLimit = 21,
 
     /// <summary>
-    /// 因达到停滞节点限制而中断（无原始界改进）
+    /// Interrupted due to stall node limit (no primal bound improvement)
     /// </summary>
     StallNodeLimit = 22,
 
     /// <summary>
-    /// 因达到时间限制而中断
+    /// Interrupted due to time limit
     /// </summary>
     TimeLimit = 23,
 
     /// <summary>
-    /// 因达到内存限制而中断
+    /// Interrupted due to memory limit
     /// </summary>
     MemoryLimit = 24,
 
     /// <summary>
-    /// 因达到间隙限制而中断
+    /// Interrupted due to gap limit
     /// </summary>
     GapLimit = 25,
 
     /// <summary>
-    /// 因达到原始界限制而中断
+    /// Interrupted due to primal bound limit
     /// </summary>
     PrimalLimit = 26,
 
     /// <summary>
-    /// 因达到对偶界限制而中断
+    /// Interrupted due to dual bound limit
     /// </summary>
     DualLimit = 27,
 
     /// <summary>
-    /// 因达到解限制而中断
+    /// Interrupted due to solution limit
     /// </summary>
     SolutionLimit = 28,
 
     /// <summary>
-    /// 因达到解改进限制而中断
+    /// Interrupted due to best solution limit
     /// </summary>
     BestSolutionLimit = 29,
 
     /// <summary>
-    /// 因达到重启限制而中断
+    /// Interrupted due to restart limit
     /// </summary>
     RestartLimit = 30
 }
 
 /// <summary>
-/// SCIP 方法返回码，对应 SCIP_RETCODE
+/// SCIP method return code, corresponds to SCIP_RETCODE
 /// </summary>
 public enum ReturnCode
 {
     /// <summary>
-    /// 正常终止
+    /// Normal termination
     /// </summary>
     Okay = 1,
 
     /// <summary>
-    /// 未指定错误
+    /// Unspecified error
     /// </summary>
     Error = 0,
 
     /// <summary>
-    /// 内存不足错误
+    /// Out of memory error
     /// </summary>
     NoMemory = -1,
 
     /// <summary>
-    /// 读取错误
+    /// Read error
     /// </summary>
     ReadError = -2,
 
     /// <summary>
-    /// 写入错误
+    /// Write error
     /// </summary>
     WriteError = -3,
 
     /// <summary>
-    /// 文件未找到错误
+    /// File not found error
     /// </summary>
     NoFile = -4,
 
     /// <summary>
-    /// 无法创建文件
+    /// Unable to create file
     /// </summary>
     FileCreateError = -5,
 
     /// <summary>
-    /// LP 求解器错误
+    /// LP solver error
     /// </summary>
     LpError = -6,
 
     /// <summary>
-    /// 不存在问题
+    /// No problem exists
     /// </summary>
     NoProblem = -7,
 
     /// <summary>
-    /// 此时无法调用该方法
+    /// Method cannot be called at this time
     /// </summary>
     InvalidCall = -8,
 
     /// <summary>
-    /// 输入数据错误
+    /// Input data error
     /// </summary>
     InvalidData = -9,
 
     /// <summary>
-    /// 方法返回无效结果码
+    /// Method returned invalid result code
     /// </summary>
     InvalidResult = -10,
 
     /// <summary>
-    /// 未找到所需插件
+    /// Required plugin not found
     /// </summary>
     PluginNotFound = -11,
 
     /// <summary>
-    /// 未找到指定名称的参数
+    /// Parameter with specified name not found
     /// </summary>
     ParameterUnknown = -12,
 
     /// <summary>
-    /// 参数类型不正确
+    /// Parameter type incorrect
     /// </summary>
     ParameterWrongType = -13,
 
     /// <summary>
-    /// 参数值无效
+    /// Parameter value invalid
     /// </summary>
     ParameterWrongValue = -14,
 
     /// <summary>
-    /// 给定的键已存在于表中
+    /// Given key already exists in table
     /// </summary>
     KeyAlreadyExisting = -15,
 
     /// <summary>
-    /// 超过最大分支深度级别
+    /// Maximum branch depth level exceeded
     /// </summary>
     MaxDepthLevel = -16,
 
     /// <summary>
-    /// 无法创建分支
+    /// Unable to create branch
     /// </summary>
     BranchError = -17,
 
     /// <summary>
-    /// 函数未实现
+    /// Function not implemented
     /// </summary>
     NotImplemented = -18
 }
 
 /// <summary>
-/// SCIP 回调方法结果码，对应 SCIP_RESULT
+/// SCIP callback method result code, corresponds to SCIP_RESULT
 /// </summary>
 public enum ResultCode
 {
     /// <summary>
-    /// 方法未执行
+    /// Method did not run
     /// </summary>
     DidNotRun = 1,
 
     /// <summary>
-    /// 方法未执行，但应稍后再次调用
+    /// Method did not run, but should be called again later
     /// </summary>
     Delayed = 2,
 
     /// <summary>
-    /// 方法已执行，但未找到任何内容
+    /// Method executed, but found nothing
     /// </summary>
     DidNotFind = 3,
 
     /// <summary>
-    /// 未发现不可行性
+    /// No infeasibility found
     /// </summary>
     Feasible = 4,
 
     /// <summary>
-    /// 检测到不可行性
+    /// Infeasibility detected
     /// </summary>
     Infeasible = 5,
 
     /// <summary>
-    /// 检测到无界性
+    /// Unboundedness detected
     /// </summary>
     Unbounded = 6,
 
     /// <summary>
-    /// 当前节点不可行且可被剪枝
+    /// Current node infeasible and can be pruned
     /// </summary>
     Cutoff = 7,
 
     /// <summary>
-    /// 方法添加了割平面
+    /// Method added cutting planes
     /// </summary>
     Separated = 8,
 
     /// <summary>
-    /// 方法添加了割平面，应立即开始新的分离轮次
+    /// Method added cutting planes, should immediately start new separation round
     /// </summary>
     NewRound = 9,
 
     /// <summary>
-    /// 方法缩减了变量的域
+    /// Method reduced variable domain
     /// </summary>
     ReducedDomain = 10,
 
     /// <summary>
-    /// 方法添加了约束
+    /// Method added constraints
     /// </summary>
     ConstraintAdded = 11,
 
     /// <summary>
-    /// 方法修改了约束
+    /// Method modified constraints
     /// </summary>
     ConstraintChanged = 12,
 
     /// <summary>
-    /// 方法创建了分支
+    /// Method created branches
     /// </summary>
     Branched = 13,
 
     /// <summary>
-    /// 必须求解当前节点的 LP
+    /// Must solve LP of current node
     /// </summary>
     SolveLp = 14,
 
     /// <summary>
-    /// 方法找到了可行的原始解
+    /// Method found feasible primal solution
     /// </summary>
     FoundSolution = 15,
 
     /// <summary>
-    /// 方法中断了执行，但需要时可以继续
+    /// Method suspended execution, but can continue if needed
     /// </summary>
     Suspended = 16,
 
     /// <summary>
-    /// 方法成功执行
+    /// Method executed successfully
     /// </summary>
     Success = 17,
 
     /// <summary>
-    /// 分支定界节点的处理应停止并稍后继续
+    /// Branch and bound node processing should stop and continue later
     /// </summary>
     DelayNode = 18
 }
 
 /// <summary>
-/// 约束方向
+/// Constraint direction
 /// </summary>
 public enum Sense
 {
     /// <summary>
-    /// 小于等于
+    /// Less than or equal
     /// </summary>
     LessThanOrEqual = -1,
 
     /// <summary>
-    /// 等于
+    /// Equal
     /// </summary>
     Equal = 0,
 
     /// <summary>
-    /// 大于等于
+    /// Greater than or equal
     /// </summary>
     GreaterThanOrEqual = 1
 }
 
 /// <summary>
-/// SCIP 参数强调模式，对应 SCIP_PARAMEMPHASIS
+/// SCIP parameter emphasis mode, corresponds to SCIP_PARAMEMPHASIS
 /// </summary>
 public enum ParamEmphasis
 {
     /// <summary>
-    /// 默认参数设置
+    /// Default parameter settings
     /// </summary>
     Default = 0,
 
     /// <summary>
-    /// CP 求解器模式（如无 LP 松弛）
+    /// CP solver mode (e.g., without LP relaxation)
     /// </summary>
     CPSolver = 1,
 
     /// <summary>
-    /// 快速求解简单问题
+    /// Solve easy problems quickly
     /// </summary>
     EasyCIP = 2,
 
     /// <summary>
-    /// 快速检测可行性
+    /// Detect feasibility quickly
     /// </summary>
     Feasibility = 3,
 
     /// <summary>
-    /// 处理困难 LP
+    /// Handle difficult LP
     /// </summary>
     HardLP = 4,
 
     /// <summary>
-    /// 快速证明最优性
+    /// Prove optimality quickly
     /// </summary>
     Optimality = 5,
 
     /// <summary>
-    /// 计数过程（获取可行且"快速"的计数）
+    /// Counting process (obtain feasible and "fast" counts)
     /// </summary>
     Counter = 6,
 
     /// <summary>
-    /// 三阶段求解过程的可行性阶段
+    /// Feasibility phase of three-phase solving process
     /// </summary>
     PhaseFeas = 7,
 
     /// <summary>
-    /// 三阶段求解过程的改进阶段
+    /// Improvement phase of three-phase solving process
     /// </summary>
     PhaseImprove = 8,
 
     /// <summary>
-    /// 三阶段求解过程的证明阶段
+    /// Proof phase of three-phase solving process
     /// </summary>
     PhaseProof = 9,
 
     /// <summary>
-    /// 解决数值问题
+    /// Solve numerical problems
     /// </summary>
     Numerics = 10,
 
     /// <summary>
-    /// 基准测试模式
+    /// Benchmark mode
     /// </summary>
     Benchmark = 11
 }

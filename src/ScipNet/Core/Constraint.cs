@@ -4,21 +4,21 @@ using ScipNet.Native;
 namespace ScipNet.Core;
 
 /// <summary>
-/// 约束基类
+/// Constraint base class
 /// </summary>
 public abstract class Constraint
 {
     private readonly string _name;
     private Model? _model;
 
-    /// <summary>
-    /// 获取约束名称
-    /// </summary>
+/// <summary>
+/// Gets the constraint name
+/// </summary>
     public string Name => _name;
 
-    /// <summary>
-    /// 获取关联的模型
-    /// </summary>
+/// <summary>
+/// Gets the associated model
+/// </summary>
     public Model Model
     {
         get
@@ -32,9 +32,9 @@ public abstract class Constraint
         internal set => _model = value;
     }
 
-    /// <summary>
-    /// 获取约束指针
-    /// </summary>
+/// <summary>
+/// Gets the constraint pointer
+/// </summary>
     public IntPtr ConsPtr { get; private set; }
 
     protected void SetConsPtr(IntPtr consPtr)
@@ -42,9 +42,9 @@ public abstract class Constraint
         ConsPtr = consPtr;
     }
 
-    /// <summary>
-    /// 内部设置约束指针（用于由 Model 直接创建的约束）
-    /// </summary>
+/// <summary>
+/// Internally sets the constraint pointer (used for constraints created directly by Model)
+/// </summary>
     internal void SetConsPtrInternal(IntPtr consPtr)
     {
         SetConsPtr(consPtr);
@@ -64,7 +64,7 @@ public abstract class Constraint
 }
 
 /// <summary>
-/// 代表线性约束
+/// Represents a linear constraint
 /// </summary>
 public sealed class LinearConstraint : Constraint
 {
@@ -73,18 +73,18 @@ public sealed class LinearConstraint : Constraint
     private readonly double _rhs;
 
     /// <summary>
-    /// 获取表达式
+    /// Gets the expression
     /// </summary>
     public LinearExpression Expression => _expression;
 
-    /// <summary>
-    /// 获取约束方向
-    /// </summary>
+/// <summary>
+/// Gets the constraint direction
+/// </summary>
     public Sense Sense => _sense;
 
-    /// <summary>
-    /// 获取右侧值
-    /// </summary>
+/// <summary>
+/// Gets the right-hand side value
+/// </summary>
     public double RightHandSide => _rhs;
 
     public LinearConstraint(
@@ -109,7 +109,7 @@ public sealed class LinearConstraint : Constraint
             throw new InvalidOperationException("Constraint must have at least one variable");
         }
 
-        // 分配变量和系数数组
+        // Allocate variable and coefficient arrays
         IntPtr varsPtr = IntPtr.Zero;
         IntPtr valsPtr = IntPtr.Zero;
 
@@ -122,7 +122,7 @@ public sealed class LinearConstraint : Constraint
             foreach (var kvp in coefficients)
             {
                 Marshal.WriteIntPtr(varsPtr, i * IntPtr.Size, kvp.Key.VarPtr);
-                // 使用 BitConverter 将 double 转换为 long，然后写入
+                // Use BitConverter to convert double to long, then write
                 long bits = BitConverter.DoubleToInt64Bits(kvp.Value);
                 Marshal.WriteInt64(valsPtr + i * sizeof(double), bits);
                 i++;
@@ -192,7 +192,7 @@ public sealed class LinearConstraint : Constraint
 }
 
 /// <summary>
-/// 代表范围约束
+/// Represents a range constraint
 /// </summary>
 public sealed class RangeConstraint : Constraint
 {
@@ -201,18 +201,18 @@ public sealed class RangeConstraint : Constraint
     private readonly double _ub;
 
     /// <summary>
-    /// 获取表达式
+    /// Gets the expression
     /// </summary>
     public LinearExpression Expression => _expression;
 
-    /// <summary>
-    /// 获取下界
-    /// </summary>
+/// <summary>
+/// Gets the lower bound
+/// </summary>
     public double LowerBound => _lb;
 
-    /// <summary>
-    /// 获取上界
-    /// </summary>
+/// <summary>
+/// Gets the upper bound
+/// </summary>
     public double UpperBound => _ub;
 
     public RangeConstraint(
@@ -237,7 +237,7 @@ public sealed class RangeConstraint : Constraint
             throw new InvalidOperationException("Constraint must have at least one variable");
         }
 
-        // 分配变量和系数数组
+        // Allocate variable and coefficient arrays
         IntPtr varsPtr = IntPtr.Zero;
         IntPtr valsPtr = IntPtr.Zero;
 
@@ -250,7 +250,7 @@ public sealed class RangeConstraint : Constraint
             foreach (var kvp in coefficients)
             {
                 Marshal.WriteIntPtr(varsPtr, i * IntPtr.Size, kvp.Key.VarPtr);
-                // 使用 BitConverter 将 double 转换为 long，然后写入
+                // Use BitConverter to convert double to long, then write
                 long bits = BitConverter.DoubleToInt64Bits(kvp.Value);
                 Marshal.WriteInt64(valsPtr + i * sizeof(double), bits);
                 i++;

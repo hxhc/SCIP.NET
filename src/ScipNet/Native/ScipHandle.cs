@@ -3,20 +3,20 @@ using System.Runtime.InteropServices;
 
 namespace ScipNet.Native;
 
-/// <summary>
-/// SCIP 句柄的 SafeHandle 实现
-/// </summary>
+    /// <summary>
+    /// SafeHandle implementation for SCIP handle
+    /// </summary>
 public sealed class ScipHandle : SafeHandleZeroOrMinusOneIsInvalid
 {
     /// <summary>
-    /// 初始化新实例
+    /// Initialize new instance
     /// </summary>
     public ScipHandle() : base(true)
     {
     }
 
     /// <summary>
-    /// 从现有指针初始化
+    /// Initialize from existing pointer
     /// </summary>
     public ScipHandle(IntPtr handle, bool ownsHandle) : base(ownsHandle)
     {
@@ -24,7 +24,7 @@ public sealed class ScipHandle : SafeHandleZeroOrMinusOneIsInvalid
     }
 
     /// <summary>
-    /// 释放句柄
+    /// Release handle
     /// </summary>
     protected override bool ReleaseHandle()
     {
@@ -37,7 +37,7 @@ public sealed class ScipHandle : SafeHandleZeroOrMinusOneIsInvalid
     }
 
     /// <summary>
-    /// 隐式转换为 IntPtr
+    /// Implicit conversion to IntPtr
     /// </summary>
     public static implicit operator IntPtr(ScipHandle scipHandle)
     {
