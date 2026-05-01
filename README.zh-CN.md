@@ -1,11 +1,18 @@
 # SCIP.NET
 
-SCIP.NET - 一个现代的 C# 封装，用于 SCIP（求解约束整数规划）优化求解器。
+> **SCIP.NET** — 一个现代的 C# 封装，用于 [SCIP](https://scipopt.org/)（求解约束整数规划）优化求解器。
 
-## 重要
-本项目由 AI 代码工具编写。首个commit纯粹由 [GLM 4.7](https://bigmodel.cn/) (又称 [Z.ai](https://chat.z.ai/)) 完成的。我不保证代码的正确性。
+[![.NET](https://img.shields.io/badge/.NET-8.0-blue)](https://dotnet.microsoft.com/)
+[![SCIP](https://img.shields.io/badge/SCIP-9.0+-orange)](https://scipopt.org/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
 
 [English Documentation](README.md)
+
+---
+
+## 重要
+
+本项目由 AI 代码工具编写。首个 commit 纯粹由 [GLM 4.7](https://bigmodel.cn/)（又称 [Z.ai](https://chat.z.ai/)）完成。我不保证代码的正确性。
 
 ## 概述
 
@@ -13,12 +20,15 @@ SCIP.NET 是 SCIP 优化求解器的现代 C# 封装，提供类型安全、易�
 
 ## 特性
 
-- **类型安全**：充分利用 C# 的强类型系统
-- **自然语法**：支持运算符重载和表达式语法
-- **资源管理**：使用 SafeHandle 确保 RAII
-- **跨平台**：支持 .NET 8.0+，可在 Windows、Linux、macOS 上运行
-- **错误处理**：使用 C# 异常机制
-- **高性能**：基于 P/Invoke 的原生接口调用
+- **类型安全** — 充分利用 C# 的强类型系统
+- **自然语法** — 运算符重载支持数学表达式：`x + 2 * y`、`(x + y).Leq(5)`
+- **资源管理** — 使用 `SafeHandle` 确保 RAII
+- **跨平台** — 支持 .NET 8.0+，可在 Windows、Linux、macOS 上运行
+- **错误处理** — 结构化的 C# 异常层次
+- **高性能** — 基于 P/Invoke 的原生接口调用
+- **非线性支持** — 内置表达式树：$\sin$、$\cos$、$\exp$、$\log$、$\sqrt{\cdot}$、$|\cdot|$、$x^n$
+- **解枚举** — 通过 SCIP 的 `countsols` 约束处理器枚举所有可行解
+- **指示约束** — 建模逻辑蕴含：$z = 1 \implies a^\top x \leq b$
 
 ## 快速开始
 
@@ -30,7 +40,7 @@ using ScipNet.Core;
 // 创建模型
 using var model = new Model("example");
 
-// 创建变量
+// 创建整数变量
 var x = model.AddVariable("x", 0, 10, VariableType.Integer);
 var y = model.AddVariable("y", 0, 10, VariableType.Integer);
 
@@ -46,7 +56,7 @@ model.AddConstraint((x - y).Eq(1));
 
 Console.WriteLine($"Added constraints: {model.Constraints.Count}");
 
-// 优化
+// 求解
 Console.WriteLine("Solving...");
 var status = model.Optimize();
 
@@ -78,62 +88,57 @@ Console.WriteLine($"  LP iterations: {statistics.NLpIterations}");
 Console.WriteLine($"  Solutions found: {statistics.NSolutionsFound}");
 ```
 
+## 文档
+
+详细文档位于 [`docs/`](docs/index.md) 目录：
+
+| 文档 | 说明 |
+|------|------|
+| [文档索引](docs/index.md) | 概述、架构、项目结构 |
+| [入门指南](docs/getting-started.md) | 安装、构建、依赖、快速开始 |
+| [基础建模](docs/basic-modeling.md) | 变量、线性表达式、约束、求解、解 |
+| [非线性建模](docs/nonlinear-modeling.md) | $\sin$、$\cos$、$\exp$、$\log$、$\sqrt{\cdot}$、$|\cdot|$、$x^n$ 及示例 |
+| [解池](docs/solution-pool.md) | 枚举所有可行解（$Count()$、组合、背包问题） |
+| [指示约束](docs/indicator-constraints.md) | 蕴含约束（`Implies()`） |
+| [参数参考](docs/parameter-reference.md) | SCIP 参数调优、强调模式 |
+
 ## 项目结构
 
 ```
 SCIP.NET/
 ├── src/
 │   └── ScipNet/
-│       ├── ScipNet.csproj       # 项目文件
-│       ├── ScipNet.cs            # 主入口
-│       ├── Core/                # 核心类
-│       │   ├── Enums.cs         # 枚举类型
-│       │   ├── Model.cs         # 模型类
-│       │   ├── Variable.cs      # 变量类
-│       │   ├── LinearExpression.cs # 线性表达式
-│       │   ├── Constraint.cs     # 约束类
-│       │   ├── Solution.cs      # 解类
-│       │   └── Statistics.cs    # 统计类
-│       └── Native/              # 原生接口
-│           ├── ScipHandle.cs    # SafeHandle 包装
+│       ├── ScipNet.cs           # 主入口和版本信息
+│       ├── Core/
+│       │   ├── Enums.cs         # VariableType、SolveStatus 等枚举
+│       │   ├── Model.cs         # 主优化模型
+│       │   ├── Variable.cs      # 带有运算符的决策变量
+│       │   ├── LinearExpression.cs     # 线性表达式 DSL
+│       │   ├── NonlinearExpression.cs  # 非线性表达式树
+│       │   ├── Constraint.cs          # LinearConstraint、RangeConstraint
+│       │   ├── NonlinearConstraint.cs # 非线性约束
+│       │   ├── IndicatorConstraint.cs # 指示（蕴含）约束
+│       │   ├── Solution.cs     # 解表示
+│       │   └── Statistics.cs   # 求解器统计
+│       └── Native/
+│           ├── ScipHandle.cs       # SafeHandle 包装
 │           ├── ScipNativeMethods.cs # P/Invoke 声明
-│           └── ErrorHandler.cs  # 错误处理
+│           └── ErrorHandler.cs     # 异常层次
 ├── examples/
-│   ├── Examples.csproj       # 示例项目
-│   └── Example1_BasicModel.cs # 基础示例
-├── plans/
-│   ├── architecture-design.md   # 架构设计文档
-│   └── native-dll-interop-analysis.md # Native DLL 互操作分析
+│   ├── Example1_BasicModel.cs           # 基础 LP/MIP
+│   ├── Example2_NonlinearModel.cs       # 10 个非线性示例
+│   ├── Example3_SolutionPoolExample.cs  # 解枚举
+│   └── Example4_KnapsackSolutionPool.cs # 背包 + 解池
+├── docs/
+│   ├── index.md                 # 文档索引
+│   ├── getting-started.md       # 安装和快速开始
+│   ├── basic-modeling.md        # 变量、约束、求解
+│   ├── nonlinear-modeling.md    # 非线性函数
+│   ├── solution-pool.md         # 解枚举
+│   ├── indicator-constraints.md # 指示约束
+│   └── parameter-reference.md   # 参数配置
 └── README.md
 ```
-
-## 核心类
-
-### Model
-代表优化问题模型，提供变量和约束管理、求解等功能。
-
-### Variable
-代表决策变量，支持 Binary、Integer、Continuous 类型。
-
-### LinearExpression
-代表线性表达式，支持运算符重载。
-
-### Constraint
-约束基类，包括 LinearConstraint 和 RangeConstraint。
-
-### Solution
-代表 SCIP 解，提供变量值访问。
-
-### Statistics
-代表求解统计信息，包括求解时间、节点数等。
-
-## 枚举类型
-
-- **VariableType**：Binary、Integer、Continuous
-- **ObjectiveSense**：Maximize、Minimize
-- **SolveStatus**：Optimal、Infeasible、Unbounded 等
-- **ReturnCode**：Okay、Error、NoMemory 等
-- **ResultCode**：DidNotRun、Feasible、Infeasible 等
 
 ## 构建和运行
 
@@ -151,10 +156,37 @@ cd examples
 dotnet run
 ```
 
+## 核心类
+
+| 类 | 说明 |
+|-------|------|
+| `Model` | 优化问题模型 — 变量/约束管理、求解 |
+| `Variable` | 决策变量（Binary、Integer、Continuous） |
+| `LinearExpression` | 支持运算符重载的线性表达式 |
+| `NonlinearExpression` | 非线性表达式树（$\sin$、$\cos$、$\exp$ 等） |
+| `LinearConstraint` | 线性约束：$a^\top x \leq b$、$a^\top x \geq b$、$a^\top x = b$ |
+| `RangeConstraint` | 双边约束：$\ell \leq a^\top x \leq u$ |
+| `NonlinearConstraint` | 带有非线性表达式的约束 |
+| `IndicatorConstraint` | 蕴含约束：$z = 1 \implies a^\top x \leq b$ |
+| `Solution` | 带有变量值访问的解 |
+| `Statistics` | 求解器统计（时间、节点数、界、间隙） |
+
+## 枚举类型
+
+| 枚举 | 值 |
+|------|--------|
+| `VariableType` | `Binary`、`Integer`、`Continuous` |
+| `ObjectiveSense` | `Maximize`、`Minimize` |
+| `SolveStatus` | `Optimal`、`Infeasible`、`Unbounded`、`TimeLimit`、`NodeLimit` 等 |
+| `ReturnCode` | `Okay`、`Error`、`NoMemory` 等 |
+| `ResultCode` | `DidNotRun`、`Feasible`、`Infeasible` 等 |
+| `Sense` | `LessThanOrEqual`、`Equal`、`GreaterThanOrEqual` |
+| `ParamEmphasis` | `Default`、`Counter`、`Optimality`、`Feasibility` 等 |
+
 ## 依赖项
 
 - .NET 8.0+
-- SCIP C 库（需要单独安装）
+- SCIP C 库 9.0+（需要单独安装）
 
 ## 许可证
 
@@ -163,8 +195,9 @@ Apache License 2.0
 ## 参考
 
 - [SCIP 官方文档](https://scipopt.org/doc/html/)
-- [SCIPpp 源代码](https://github.com/scipopt/scippp)
-- [PySCIPOpt 源代码](https://github.com/scipopt/PySCIPOpt)
+- [SCIPpp (C++)](https://github.com/scipopt/scippp)
+- [PySCIPOpt (Python)](https://github.com/scipopt/PySCIPOpt)
+- [SCIP.NET 文档](docs/index.md)
 
 ## 贡献
 
