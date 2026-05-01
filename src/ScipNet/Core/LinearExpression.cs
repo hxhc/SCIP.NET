@@ -169,6 +169,38 @@ public sealed class LinearExpression
         return new LinearExpression(result, expr._constant);
     }
 
+    public static LinearExpression operator -(Variable variable, LinearExpression expr)
+    {
+        var result = new Dictionary<Variable, double>(expr._coefficients);
+        foreach (var key in new List<Variable>(result.Keys))
+        {
+            result[key] = -result[key];
+        }
+        if (result.TryGetValue(variable, out double existing))
+        {
+            result[variable] = existing + 1.0;
+        }
+        else
+        {
+            result[variable] = 1.0;
+        }
+        return new LinearExpression(result, -expr._constant);
+    }
+
+    /// <summary>
+    /// Subtraction operator (symmetric form: double - LinearExpression)
+    /// </summary>
+    // 减法运算符（对称形式：double - LinearExpression）
+    public static LinearExpression operator -(double value, LinearExpression expr)
+    {
+        var result = new Dictionary<Variable, double>();
+        foreach (var kvp in expr._coefficients)
+        {
+            result[kvp.Key] = -kvp.Value;
+        }
+        return new LinearExpression(result, value - expr._constant);
+    }
+
     /// <summary>
     /// Multiplication operator
     /// </summary>

@@ -137,20 +137,23 @@ public sealed class LinearConstraint : Constraint
                 i++;
             }
 
+            // Adjust rhs by subtracting the expression's constant term
+            // expression + constant <= rhs  →  expression <= rhs - constant
+            double constant = _expression.GetConstant();
             double lhs, rhs;
             switch (_sense)
             {
                 case Sense.LessThanOrEqual:
                     lhs = double.NegativeInfinity;
-                    rhs = _rhs;
+                    rhs = _rhs - constant;
                     break;
                 case Sense.GreaterThanOrEqual:
-                    lhs = _rhs;
+                    lhs = _rhs - constant;
                     rhs = double.PositiveInfinity;
                     break;
                 case Sense.Equal:
-                    lhs = _rhs;
-                    rhs = _rhs;
+                    lhs = _rhs - constant;
+                    rhs = _rhs - constant;
                     break;
                 default:
                     throw new ArgumentException($"Unknown sense: {_sense}");
@@ -269,6 +272,9 @@ public sealed class RangeConstraint : Constraint
                 i++;
             }
 
+            // Adjust bounds by subtracting the expression's constant term
+            // lb <= expression + constant <= ub  →  lb - constant <= expression <= ub - constant
+            double constant = _expression.GetConstant();
             ReturnCode ret = ScipNativeMethods.SCIPcreateConsBasicLinear(
                 Model.ScipHandle,
                 out IntPtr consPtr,
@@ -276,8 +282,8 @@ public sealed class RangeConstraint : Constraint
                 nvars,
                 varsPtr,
                 valsPtr,
-                _lb,
-                _ub);
+                _lb - constant,
+                _ub - constant);
 
             ErrorHandler.CheckReturnCode(ret, $"Failed to create constraint {Name}");
 

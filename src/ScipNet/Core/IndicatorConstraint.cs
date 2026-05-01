@@ -71,9 +71,15 @@ public sealed class IndicatorConstraint : Constraint
         // For >= and ==, conversion is needed:
         //   a^T x >= b  →  -a^T x <= -b
         //   a^T x == b  →  a^T x <= b AND -a^T x <= -b (split into two indicator constraints)
+        //
+        // The constant term from the expression must also be accounted for:
+        //   expression + constant <= rhs  →  expression <= rhs - constant
+        //   expression + constant >= rhs  →  -expression <= -(rhs - constant)
 
+        double constant = _expression.GetConstant();
+        double adjustedRhs = _rhs - constant;
         bool negate = _sense == Sense.GreaterThanOrEqual;
-        double rhs = negate ? -_rhs : _rhs;
+        double rhs = negate ? -adjustedRhs : adjustedRhs;
 
         IntPtr varsPtr = IntPtr.Zero;
         IntPtr valsPtr = IntPtr.Zero;
@@ -136,7 +142,7 @@ public sealed class IndicatorConstraint : Constraint
                         nvars,
                         varsPtr2,
                         valsPtr2,
-                        -_rhs);
+                        -adjustedRhs);
 
                     ErrorHandler.CheckReturnCode(ret, $"Failed to create second indicator constraint {secondName}");
 

@@ -112,9 +112,14 @@ public static LinearExpression operator +(Variable variable, double value)
 /// Creates a linear expression (subtraction)
 /// </summary>
 // 创建线性表达式（减法）
-public static LinearExpression operator -(Variable variable, double value)
+    public static LinearExpression operator -(Variable variable, double value)
     {
         return new LinearExpression().AddTerm(variable, 1.0).AddConstant(-value);
+    }
+
+    public static LinearExpression operator -(double value, Variable variable)
+    {
+        return new LinearExpression().AddTerm(variable, -1.0).AddConstant(value);
     }
 
     public static LinearExpression operator -(Variable left, Variable right)

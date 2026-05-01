@@ -79,6 +79,11 @@ public sealed class Model : IDisposable
         double upperBound,
         VariableType type)
     {
+        if (_variables.ContainsKey(name))
+        {
+            throw new ArgumentException($"Variable '{name}' already exists in the model", nameof(name));
+        }
+
         ReturnCode ret = ScipNativeMethods.SCIPcreateVarBasic(
             _scipHandle,
             out IntPtr varPtr,
@@ -242,6 +247,7 @@ public sealed class Model : IDisposable
         var objVar = new Variable(this, "__objvar__", objVarPtr, VariableType.Continuous,
             double.NegativeInfinity, double.PositiveInfinity);
         _variables[objVar.Name] = objVar;
+        _varNameToVarMap[objVar.Name] = objVar; // Also register for EvaluateObjective() lookup
 
         // Build native expression tree
         IntPtr exprPtr = expression.BuildExpr(_scipHandle);
