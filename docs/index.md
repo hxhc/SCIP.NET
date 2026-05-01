@@ -105,7 +105,7 @@ Where:
 ## Dependencies
 
 - **.NET 8.0+** — Runtime environment
-- **SCIP C library 9.0+** — Native optimization solver (requires separate installation)
+- **SCIP C library 10.0+** — Native optimization solver (requires separate installation)
 
 ## References
 

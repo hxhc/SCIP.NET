@@ -3,7 +3,7 @@
 > **SCIP.NET** — 一个现代的 C# 封装，用于 [SCIP](https://scipopt.org/)（求解约束整数规划）优化求解器。
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-blue)](https://dotnet.microsoft.com/)
-[![SCIP](https://img.shields.io/badge/SCIP-9.0+-orange)](https://scipopt.org/)
+[![SCIP](https://img.shields.io/badge/SCIP-10.0+-orange)](https://scipopt.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
 
 [English Documentation](README.md)
@@ -186,7 +186,7 @@ dotnet run
 ## 依赖项
 
 - .NET 8.0+
-- SCIP C 库 9.0+（需要单独安装）
+- SCIP C 库 10.0+（需要单独安装）
 
 ## 许可证
 

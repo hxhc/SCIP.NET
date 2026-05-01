@@ -3,7 +3,7 @@
 > **SCIP.NET** — A modern C# wrapper for the [SCIP](https://scipopt.org/) (Solving Constraint Integer Programs) optimization solver.
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-blue)](https://dotnet.microsoft.com/)
-[![SCIP](https://img.shields.io/badge/SCIP-9.0+-orange)](https://scipopt.org/)
+[![SCIP](https://img.shields.io/badge/SCIP-10.0+-orange)](https://scipopt.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
 
 [中文文档](README.zh-CN.md)
@@ -186,7 +186,7 @@ dotnet run
 ## Dependencies
 
 - .NET 8.0+
-- SCIP C library 9.0+ (requires separate installation)
+- SCIP C library 10.0+ (requires separate installation)
 
 ## License
 

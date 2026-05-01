@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download) or later
-- [SCIP Optimization Suite 9.0+](https://scipopt.org/download/) installed on your system
+- [SCIP Optimization Suite 10.0+](https://scipopt.org/download/) installed on your system
 
 ### Installing SCIP
 
