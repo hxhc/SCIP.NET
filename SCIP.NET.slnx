@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ScipNet/ScipNet.csproj" />
+  </Folder>
+  <Project Path="SimpleBlending/SimpleBlending.csproj" />
+</Solution>

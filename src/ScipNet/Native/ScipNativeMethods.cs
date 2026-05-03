@@ -4,9 +4,34 @@ using ScipNet.Core;
 namespace ScipNet.Native;
 
 /// <summary>
+/// SCIP_DECL_EVENTEXEC delegate: called when an event is triggered
+/// </summary>
+[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+internal delegate ReturnCode EventExecCallback(
+    IntPtr scip,
+    IntPtr eventhdlr,
+    IntPtr event_,
+    IntPtr eventdata);
+
+/// <summary>
+/// SCIP_DECL_EVENTINIT delegate: called when event handler is initialized
+/// </summary>
+[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+internal delegate ReturnCode EventInitCallback(
+    IntPtr scip,
+    IntPtr eventhdlr);
+
+/// <summary>
+/// SCIP_DECL_EVENTEXIT delegate: called when event handler is exited
+/// </summary>
+[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+internal delegate ReturnCode EventExitCallback(
+    IntPtr scip,
+    IntPtr eventhdlr);
+
+/// <summary>
 /// SCIP Native method declarations
 /// </summary>
-// SCIP 本地方法声明
 internal static class ScipNativeMethods
 {
     private const string DllName = "libscip";
@@ -548,6 +573,14 @@ public static extern IntPtr SCIPvarGetName(
     IntPtr var);
 
 /// <summary>
+/// Gets the variable type
+/// </summary>
+// 获取变量类型
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern VariableType SCIPvarGetType(
+    IntPtr var);
+
+/// <summary>
 /// Explicitly includes the countsols constraint handler
 /// Note: This IS included by SCIPincludeDefaultPlugins() in SCIP 9.0+
 /// so we need to check if it's already included before calling this
@@ -710,4 +743,111 @@ public static extern ReturnCode SCIPsetEmphasis(
     IntPtr scip,
     ParamEmphasis paramemphasis,
     [MarshalAs(UnmanagedType.I1)] bool quiet);
+
+// ===== Event Handling =====
+// ===== 事件处理 =====
+
+/// <summary>
+/// Event type constant: a new feasible solution was found (includes both poor and best)
+/// SCIP_EVENTTYPE is uint64_t in SCIP, so we use ulong here.
+/// </summary>
+public const ulong SCIP_EVENTTYPE_POORSOLFOUND = 0x002000000;
+public const ulong SCIP_EVENTTYPE_BESTSOLFOUND = 0x004000000;
+public const ulong SCIP_EVENTTYPE_SOLFOUND = SCIP_EVENTTYPE_POORSOLFOUND | SCIP_EVENTTYPE_BESTSOLFOUND;
+
+/// <summary>
+/// Includes a basic event handler (only exec callback)
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+public static extern ReturnCode SCIPincludeEventhdlrBasic(
+    IntPtr scip,
+    out IntPtr eventhdlrptr,
+    [MarshalAs(UnmanagedType.LPStr)] string name,
+    [MarshalAs(UnmanagedType.LPStr)] string desc,
+    IntPtr eventexec,
+    IntPtr eventhdlrdata);
+
+/// <summary>
+/// Finds an event handler by name
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+public static extern IntPtr SCIPfindEventhdlr(
+    IntPtr scip,
+    [MarshalAs(UnmanagedType.LPStr)] string name);
+
+/// <summary>
+/// Catches (subscribes to) an event type
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern ReturnCode SCIPcatchEvent(
+    IntPtr scip,
+    ulong eventtype,
+    IntPtr eventhdlr,
+    IntPtr eventdata,
+    out int filterpos);
+
+/// <summary>
+/// Drops (unsubscribes from) an event type
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern ReturnCode SCIPdropEvent(
+    IntPtr scip,
+    ulong eventtype,
+    IntPtr eventhdlr,
+    IntPtr eventdata,
+    int filterpos);
+
+/// <summary>
+/// Gets the solution from a SOLFOUND event
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern IntPtr SCIPeventGetSol(
+    IntPtr event_);
+
+/// <summary>
+/// Gets the event type of an event
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern ulong SCIPeventGetType(
+    IntPtr event_);
+
+/// <summary>
+/// Gets the objective value of a solution
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern double SCIPgetSolObjVal(
+    IntPtr scip,
+    IntPtr sol);
+
+/// <summary>
+/// Gets all variables of the problem
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern IntPtr SCIPgetVars(
+    IntPtr scip);
+
+/// <summary>
+/// Gets the number of variables in the problem
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern int SCIPgetNVars(
+    IntPtr scip);
+
+/// <summary>
+/// Sets the solving process initialization callback of the event handler
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern ReturnCode SCIPsetEventhdlrInitsol(
+    IntPtr scip,
+    IntPtr eventhdlr,
+    IntPtr eventinitsol);
+
+/// <summary>
+/// Sets the solving process deinitialization callback of the event handler
+/// </summary>
+[DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+public static extern ReturnCode SCIPsetEventhdlrExitsol(
+    IntPtr scip,
+    IntPtr eventhdlr,
+    IntPtr eventexitsol);
 }

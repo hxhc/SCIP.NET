@@ -447,24 +447,63 @@ public List<Dictionary<Variable, double>> GetSparseSolutionsWithVariables()
                     for (int v = 0; v < solNVars; v++)
                     {
                         IntPtr varPtr = Marshal.ReadIntPtr(solVars, v * IntPtr.Size);
-                        long value = Marshal.ReadInt64(concreteSolBuf, v * sizeof(long));
+
+                        // Get variable type to determine how to read the value
+                        VariableType varType = ScipNativeMethods.SCIPvarGetType(varPtr);
+                        double value;
+
+                        // Read value based on variable type
+                        if (varType == VariableType.Continuous)
+                        {
+                            // For continuous variables, read as double
+                            value = Marshal.PtrToStructure<double>(concreteSolBuf + v * sizeof(double));
+                        }
+                        else
+                        {
+                            // For binary/integer variables, read as long and convert to double
+                            value = (double)Marshal.ReadInt64(concreteSolBuf, v * sizeof(long));
+                        }
 
                         // Try to get variable by name (since pointers may not match after SCIP transformation)
                         IntPtr varNamePtr = ScipNativeMethods.SCIPvarGetName(varPtr);
                         string varName = Marshal.PtrToStringAnsi(varNamePtr) ?? "";
 
+                        Variable? variable = null;
+
                         // Try direct name match first
-                        if (_varNameToVarMap.TryGetValue(varName, out Variable? variable))
+                        if (_varNameToVarMap.TryGetValue(varName, out variable))
                         {
-                            solutionValues[variable] = (double)value;
+                            solutionValues[variable] = value;
                         }
-                        // If not found, try stripping common prefixes (like "t_")
-                        else if (varName.StartsWith("t_"))
+                        // If not found, try stripping common prefixes
+                        else
                         {
-                            string originalName = varName.Substring(2); // Remove "t_" prefix
-                            if (_varNameToVarMap.TryGetValue(originalName, out variable))
+                            // List of common SCIP prefixes to try stripping
+                            string[] prefixes = { "t_", "x_", "y_", "z_" };
+                            foreach (string prefix in prefixes)
                             {
-                                solutionValues[variable] = (double)value;
+                                if (varName.StartsWith(prefix))
+                                {
+                                    string originalName = varName.Substring(prefix.Length);
+                                    if (_varNameToVarMap.TryGetValue(originalName, out variable))
+                                    {
+                                        solutionValues[variable] = value;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // If still not found with prefix stripping, try case-insensitive match
+                            if (variable == null)
+                            {
+                                foreach (var kvp in _varNameToVarMap)
+                                {
+                                    if (string.Equals(kvp.Key, varName, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        solutionValues[kvp.Value] = value;
+                                        break;
+                                    }
+                                }
                             }
                         }
                     }
@@ -709,6 +748,199 @@ public void SetEmphasis(ParamEmphasis paramEmphasis, bool quiet = false)
     }
 
     internal ScipHandle ScipHandle => _scipHandle;
+
+    // ===== Event-based Solution Collection =====
+    // ===== 基于事件的解收集 =====
+
+    // Delegates must be stored as fields to prevent garbage collection
+    private EventExecCallback? _eventExecCallback;
+    private EventInitCallback? _eventInitCallback;
+    private EventExitCallback? _eventExitCallback;
+
+    // Event handler state
+    private IntPtr _eventhdlrPtr;
+    private int _eventFilterPos;
+    private bool _eventCatching;
+
+    // Capture settings
+    private int _maxCapturedSolutions;
+    private List<CapturedSolution>? _capturedSolutions;
+
+    /// <summary>
+    /// Represents a solution captured by the event handler
+    /// </summary>
+    public class CapturedSolution
+    {
+        /// <summary>
+        /// Variable values (indexed by variable name)
+        /// </summary>
+        public Dictionary<string, double> Values { get; } = new();
+
+        /// <summary>
+        /// Objective value
+        /// </summary>
+        public double ObjectiveValue { get; set; }
+    }
+
+    /// <summary>
+    /// Enables event-based solution collection.
+    /// After calling this method, every feasible solution found by SCIP (via branch-and-bound or heuristics)
+    /// will be captured and stored. Use GetCapturedSolutions() to retrieve them after solving.
+    ///
+    /// This mechanism correctly handles continuous variables (unlike Count()/sparse solutions).
+    /// </summary>
+    /// <param name="maxSolutions">Maximum number of solutions to capture (0 = unlimited)</param>
+    public void EnableSolutionCapture(int maxSolutions = 0)
+    {
+        _capturedSolutions = new List<CapturedSolution>();
+        _maxCapturedSolutions = maxSolutions;
+
+        // Create the exec callback (MUST be stored as a field to prevent GC)
+        _eventExecCallback = OnSolutionFound;
+
+        // Create init/exitsol callbacks
+        _eventInitCallback = OnEventHandlerInit;
+        _eventExitCallback = OnEventHandlerExit;
+
+        // Convert delegates to function pointers
+        IntPtr execCallbackPtr = Marshal.GetFunctionPointerForDelegate(_eventExecCallback);
+        IntPtr initCallbackPtr = Marshal.GetFunctionPointerForDelegate(_eventInitCallback);
+        IntPtr exitCallbackPtr = Marshal.GetFunctionPointerForDelegate(_eventExitCallback);
+
+        // Register event handler using raw function pointer
+        ReturnCode ret = ScipNativeMethods.SCIPincludeEventhdlrBasic(
+            _scipHandle,
+            out _eventhdlrPtr,
+            "SolCollector",
+            "Captures all feasible solutions including continuous variables",
+            execCallbackPtr,
+            IntPtr.Zero);
+        ErrorHandler.CheckReturnCode(ret, "Failed to include event handler");
+
+        // Set init/exitsol callbacks - these will catch/drop events at the right stage
+        ret = ScipNativeMethods.SCIPsetEventhdlrInitsol(_scipHandle, _eventhdlrPtr, initCallbackPtr);
+        ErrorHandler.CheckReturnCode(ret, "Failed to set event handler initsol callback");
+
+        ret = ScipNativeMethods.SCIPsetEventhdlrExitsol(_scipHandle, _eventhdlrPtr, exitCallbackPtr);
+        ErrorHandler.CheckReturnCode(ret, "Failed to set event handler exitsol callback");
+
+        _eventCatching = true;
+    }
+
+    /// <summary>
+    /// Gets all solutions captured during solving (via EnableSolutionCapture).
+    /// Each solution contains variable values indexed by variable name.
+    /// </summary>
+    public IReadOnlyList<CapturedSolution> GetCapturedSolutions()
+    {
+        return _capturedSolutions ?? (IReadOnlyList<CapturedSolution>)Array.Empty<CapturedSolution>();
+    }
+
+    /// <summary>
+    /// Disables event-based solution collection and releases resources.
+    /// Note: This is normally called automatically via the exitsol callback.
+    /// </summary>
+    public void DisableSolutionCapture()
+    {
+        if (!_eventCatching || _eventhdlrPtr == IntPtr.Zero) return;
+
+        // Unsubscribe from event (if still catching)
+        if (_eventCatching)
+        {
+            ScipNativeMethods.SCIPdropEvent(
+                _scipHandle,
+                ScipNativeMethods.SCIP_EVENTTYPE_SOLFOUND,
+                _eventhdlrPtr,
+                IntPtr.Zero,
+                _eventFilterPos);
+        }
+
+        _eventCatching = false;
+    }
+
+    /// <summary>
+    /// Event handler init callback - called at the start of solving (right stage to catch events)
+    /// </summary>
+    private ReturnCode OnEventHandlerInit(IntPtr scip, IntPtr eventhdlr)
+    {
+        // Catch SOLFOUND events at the right stage (SCIP_STAGE_SOLVING)
+        ReturnCode ret = ScipNativeMethods.SCIPcatchEvent(
+            scip,
+            ScipNativeMethods.SCIP_EVENTTYPE_SOLFOUND,
+            eventhdlr,
+            IntPtr.Zero,
+            out _eventFilterPos);
+        ErrorHandler.CheckReturnCode(ret, "Failed to catch SOLFOUND event in init callback");
+        _eventCatching = true;
+        return ReturnCode.Okay;
+    }
+
+    /// <summary>
+    /// Event handler exit callback - called at the end of solving
+    /// </summary>
+    private ReturnCode OnEventHandlerExit(IntPtr scip, IntPtr eventhdlr)
+    {
+        // Drop SOLFOUND events
+        if (_eventCatching)
+        {
+            ScipNativeMethods.SCIPdropEvent(
+                scip,
+                ScipNativeMethods.SCIP_EVENTTYPE_SOLFOUND,
+                eventhdlr,
+                IntPtr.Zero,
+                _eventFilterPos);
+            _eventCatching = false;
+        }
+        return ReturnCode.Okay;
+    }
+
+    /// <summary>
+    /// Callback invoked when SCIP finds a new feasible solution.
+    /// This uses SCIPgetSolVal to correctly read continuous variable values.
+    /// </summary>
+    private ReturnCode OnSolutionFound(IntPtr scip, IntPtr eventhdlr, IntPtr event_, IntPtr eventdata)
+    {
+        try
+        {
+            if (_capturedSolutions == null) return ReturnCode.Okay;
+
+            // Debug: Get event type
+            ulong eventType = ScipNativeMethods.SCIPeventGetType(event_);
+            bool isSolFound = (eventType & ScipNativeMethods.SCIP_EVENTTYPE_SOLFOUND) != 0;
+
+            // Only process SOLFOUND events
+            if (!isSolFound) return ReturnCode.Okay;
+
+            // Check solution limit
+            if (_maxCapturedSolutions > 0 && _capturedSolutions.Count >= _maxCapturedSolutions)
+                return ReturnCode.Okay;
+
+            // Get the solution from the event
+            IntPtr solPtr = ScipNativeMethods.SCIPeventGetSol(event_);
+            if (solPtr == IntPtr.Zero) return ReturnCode.Okay;
+
+            // Get objective value
+            double objVal = ScipNativeMethods.SCIPgetSolObjVal(scip, solPtr);
+
+            // Extract all variable values
+            var capturedSol = new CapturedSolution { ObjectiveValue = objVal };
+
+            foreach (var kvp in _variables)
+            {
+                double val = ScipNativeMethods.SCIPgetSolVal(scip, solPtr, kvp.Value.VarPtr);
+                capturedSol.Values[kvp.Key] = val;
+            }
+
+            _capturedSolutions.Add(capturedSol);
+        }
+        catch
+        {
+            // Swallow exceptions in callback to avoid crashing SCIP
+            // This also handles the case where SCIPeventGetSol is called on a non-solution event
+        }
+
+        return ReturnCode.Okay;
+    }
 
     public override string ToString()
     {
